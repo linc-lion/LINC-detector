@@ -19,17 +19,6 @@ import utils
 import transforms as T
 
 
-def get_dataset(name, image_set, transform, dataset_folder):
-    paths = {
-        "coco": (dataset_folder, get_coco, 9),
-        # "coco_kp": ('/datasets01/COCO/022719/', get_coco_kp, 2)
-    }
-    p, ds_fn, num_classes = paths[name]
-
-    ds = ds_fn(p, image_set=image_set, transforms=transform)
-    return ds, num_classes
-
-
 def get_transform(train):
     transforms = []
     transforms.append(T.ToTensor())
@@ -47,16 +36,19 @@ def main(args):
     # Data loading code
     print("Loading data")
 
-    dataset, num_classes = get_dataset(
-        args.dataset, "train", get_transform(train=True), args.data_path)
+    dataset, num_classes = get_coco(
+        args.data_path, image_set='train', transforms=get_transform(train=True)
+    )
     if args.overfit:
-        dataset_test, _ = get_dataset(
-            args.dataset, "train", get_transform(train=False), args.data_path)
+        dataset_test, _ = get_coco(
+            args.data_path, image_set='train', transforms=get_transform(train=False),
+        )
         print("Overfitting to train dataset! Only for debugging")
         assert len(dataset) == len(dataset_test)
     else:
-        dataset_test, _ = get_dataset(
-            args.dataset, "val", get_transform(train=False), args.data_path)
+        dataset_test, _ = get_coco(
+            args.data_path, image_set='val', transforms=get_transform(train=False)
+        )
 
     print("Creating data loaders")
     if args.distributed:
@@ -83,8 +75,6 @@ def main(args):
         collate_fn=utils.collate_fn)
 
     print("Creating model")
-    print('pretrained?')
-    import ipdb; ipdb.set_trace()
     model = torchvision.models.detection.__dict__[args.model](num_classes=num_classes,
                                                               pretrained=args.pretrained)
     model.to(device)
@@ -144,7 +134,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='PyTorch Detection Training')
 
     parser.add_argument('--data-path', default='/home/lalo/linc/coco', help='dataset')
-    parser.add_argument('--dataset', default='coco', help='dataset')
     parser.add_argument('--model', default='fasterrcnn_resnet50_fpn', help='model')
     parser.add_argument('--device', default='cuda', help='device')
     parser.add_argument('-b', '--batch-size', default=4, type=int)

@@ -1,6 +1,6 @@
 import copy
 import os
-from PIL import Image
+import json
 
 import torch
 import torch.utils.data
@@ -236,6 +236,12 @@ def get_coco(root, image_set, transforms, mode='instances'):
     img_folder = os.path.join(root, img_folder)
     ann_file = os.path.join(root, ann_file)
 
+    # Count number of categories in dataset
+    category_ids = set()
+    ann_dict = json.load(open(ann_file, 'r'))['annotations']
+    for a in ann_dict:
+        category_ids.add(a['category_id'])
+
     dataset = CocoDetection(img_folder, ann_file, transforms=transforms)
 
     if image_set == "train":
@@ -243,7 +249,7 @@ def get_coco(root, image_set, transforms, mode='instances'):
 
     # dataset = torch.utils.data.Subset(dataset, [i for i in range(500)])
 
-    return dataset
+    return dataset, len(category_ids) + 1  # Add 1 for the background class
 
 
 def get_coco_kp(root, image_set, transforms):
