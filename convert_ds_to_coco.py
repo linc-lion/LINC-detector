@@ -65,8 +65,6 @@ coco_val = {
     "annotations": [],
 }
 
-CATEGORIES_TO_IGNORE = [0, 7, 8]
-
 
 def parse_voc_xml(node):
     voc_dict = {}
@@ -96,123 +94,33 @@ def deterministic_hash(string):
 
 
 class ConvertLINC():
-    num_of_classes = 9
-    name_to_label = {
-        # Markings
-        'markings': 0,
-        'ear-fl-marking': 0,
-        'mouth-f-marking': 0,
-        'eye-dr-l-marking': 0,
-        'tooth-marking': 0,
-        'nose-f-marking': 0,
-        'nose-dl-marking': 0,
-        'eye-fl-marking': 0,
-        'ear-dr-l-marking': 0,
-        'ear-f-r-marking': 0,
-        'mouth-dr-marking': 0,
-        'nose-dr-marking': 0,
-        'mouth-sl-marking': 0,
-        'ear-dr-marking': 0,
-        'ear-sl-marking': 0,
-        'eye-dl-l-marking': 0,
-        'ear-dl-r-marking': 0,
-        'mouth-dl-marking': 0,
-        'full-body-markings': 0,
-        'marking': 0,
+    def __init__(self):
+        self.category_relationships = {
+            'markings': set(['markings', 'ear-fl-marking', 'mouth-f-marking', 'eye-dr-l-marking', 'tooth-marking', 'nose-f-marking', 'nose-dl-marking', 'eye-fl-marking', 'ear-dr-l-marking', 'ear-f-r-marking', 'mouth-dr-marking', 'nose-dr-marking', 'mouth-sl-marking', 'ear-dr-marking', 'ear-sl-marking', 'eye-dl-l-marking', 'ear-dl-r-marking', 'mouth-dl-marking', 'full-body-markings', 'marking']),  # noqa
+            'cv': set(['cv-sright', 'cv-r', 'cv-dr-r', 'cv-f', 'cv-l', 'cv-sr', 'cv-dr', 'cv-sl', 'cv-dl-r', 'cv-dr-l', 'cv-dl', 'cv-front']),  # noqa
+            'nose': set(['nose-dl', 'nose-dr', 'nose-l', 'nose-sl', 'nose-dl-l', 'nose-fl', 'nose-sr', 'nose', 'nose-f', 'nose-r', 'nose-dr-r', 'nose-slw']),  # noqa
+            'ear': set(['ear-sl', 'ear-sr-r', 'ear-dr-r-marking', 'ear-sr-marking', 'ear-fl', 'ear-dl-l-marking', 'ear-dr-r', 'ear-fr', 'ear-fr-marking', 'ear-dl-r', 'ear-dl-l', 'ear-dr', 'ear-sr-l', 'ear-f', 'ear-sr', 'ear-dl', 'ear-f-l', 'ear-dr-l', 'ear-f-r']), # noqa
+            'whisker_area': set(['whikser-dr', 'whikser-dl', 'whisker-r', 'whisker-s', 'whisker-sr', 'whisker-dl', 'whisker-sl', 'whisker-l', 'whisker-dr', 'whiske-dr', 'whisker-f']),  # noqa
+            'mouth': set(['mouth-dr', 'mouth-dl']),
+            'eye': set(['eye-dr', 'eye-dl-r', 'eye-d-l', 'eye-dr-r', 'eye-fl', 'eye-sl', 'eye-f-r', 'eye-sr-l', 'eye-sr-r', 'eye-fr', 'eye-f', 'eye-dl', 'eye-sr', 'eye-dr-l', 'eye-f-l', 'eye-dl-l']),  # noqa
+            'whisker_spot': set(['ws']),
+            'full_body': set(['full-body']),
+        }
 
-        # CV
-        'cv-sright': 1,
-        'cv-r': 1,
-        'cv-dr-r': 1,
-        'cv-f': 1,
-        'cv-l': 1,
-        'cv-sr': 1,
-        'cv-dr': 1,
-        'cv-sl': 1,
-        'cv-dl-r': 1,
-        'cv-dr-l': 1,
-        'cv-dl': 1,
-        'cv-front': 1,
+        # Customize dataset
+        self.categories_to_ignore = ['markings', 'whisker_spot', 'full_body']
+        for cat in self.categories_to_ignore:
+            del(self.category_relationships[cat])
+        self.category_order_for_label = ['cv', 'nose', 'ear', 'whisker_area', 'mouth', 'eye']
 
-        # Nose
-        'nose-dl': 2,
-        'nose-dr': 2,
-        'nose-l': 2,
-        'nose-sl': 2,
-        'nose-dl-l': 2,
-        'nose-fl': 2,
-        'nose-sr': 2,
-        'nose': 2,
-        'nose-f': 2,
-        'nose-r': 2,
-        'nose-dr-r': 2,
-        'nose-slw': 2,
+    def get_parent_category(self, child):
+        for parent, children in self.category_relationships.items():
+            if child in children:
+                return parent
+            else:
+                continue
 
-        # Ear
-        'ear-sl': 3,
-        'ear-sr-r': 3,
-        'ear-dr-r-marking': 3,
-        'ear-sr-marking': 3,
-        'ear-fl': 3,
-        'ear-dl-l-marking': 3,
-        'ear-dr-r': 3,
-        'ear-fr': 3,
-        'ear-fr-marking': 3,
-        'ear-dl-r': 3,
-        'ear-dl-l': 3,
-        'ear-dr': 3,
-        'ear-sr-l': 3,
-        'ear-f': 3,
-        'ear-sr': 3,
-        'ear-dl': 3,
-        'ear-f-l': 3,
-        'ear-dr-l': 3,
-        'ear-f-r': 3,
-
-        # Whisker Area
-        'whikser-dr': 4,
-        'whikser-dl': 4,
-        'whisker-r': 4,
-        'whisker-s': 4,
-        'whisker-sr': 4,
-        'whisker-dl': 4,
-        'whisker-sl': 4,
-        'whisker-l': 4,
-        'whisker-dr': 4,
-        'whiske-dr': 4,
-        'whisker-f': 4,
-
-        # Mouth
-        'mouth-dr': 5,
-        'mouth-dl': 5,
-
-        # Eye
-        'eye-dr': 6,
-        'eye-dl-r': 6,
-        'eye-d-l': 6,
-        'eye-dr-r': 6,
-        'eye-fl': 6,
-        'eye-sl': 6,
-        'eye-f-r': 6,
-        'eye-sr-l': 6,
-        'eye-sr-r': 6,
-        'eye-fr': 6,
-        'eye-f': 6,
-        'eye-dl': 6,
-        'eye-sr': 6,
-        'eye-dr-l': 6,
-        'eye-f-l': 6,
-        'eye-dl-l': 6,
-
-        # Whisker Spot
-        'ws': 7,
-
-        # Full Body
-        'full-body': 8,
-
-    }
-
-    def convert_obj_to_coco_format(self, o, img_counter, obj_counter):
+    def convert_obj_to_coco(self, o, img_counter, obj_counter):
         annotation = {}
         bbox = o['bndbox']
         bbox = [float(bbox['xmin']), float(bbox['ymin']), float(bbox['xmax']), float(bbox['ymax'])]
@@ -220,7 +128,8 @@ class ConvertLINC():
         annotation['image_id'] = img_counter
         annotation['area'] = (bbox[3] - bbox[1]) * (bbox[2] - bbox[0])
         annotation['iscrowd'] = 0
-        annotation['category_id'] = self.name_to_label[o['name']]
+        parent_category = self.get_parent_category(o['name'])
+        annotation['category_id'] = self.category_order_for_label.index(parent_category)
         annotation['id'] = obj_counter
         print(annotation)
         return annotation
@@ -270,8 +179,9 @@ def convert_to_coco(root, output_dir, image_set):
                         )
                     )
                     for o in objects:
-                        target = converter.convert_obj_to_coco_format(o, img_counter, obj_counter)
-                        if target['category_id'] in CATEGORIES_TO_IGNORE:
+                        try:
+                            target = converter.convert_obj_to_coco(o, img_counter, obj_counter)
+                        except ValueError:  # Ignore categories filtered from category_relationships
                             continue
                         coco_train['annotations'].append(target)
                         obj_counter += 1
@@ -282,20 +192,24 @@ def convert_to_coco(root, output_dir, image_set):
                         )
                     )
                     for o in objects:
-                        target = converter.convert_obj_to_coco_format(o, img_counter, obj_counter)
-                        if target['category_id'] in CATEGORIES_TO_IGNORE:
+                        try:
+                            target = converter.convert_obj_to_coco(o, img_counter, obj_counter)
+                        except ValueError:  # Ignore categories filtered from category_relationships
                             continue
                         coco_val['annotations'].append(target)
                         obj_counter += 1
 
                 img_counter += 1
 
+    with open(os.path.join(output_folder, 'labels.json'), 'w') as f:
+        json.dump(converter.category_order_for_label, f)
     print(f"Done, got {img_counter} images.")
+    print("Make sure you customized 'category_order_for_label' and 'categories_to_ignore' before running!")  # noqa
 
 
 if __name__ == "__main__":
-    output_folder = '/home/lalo/linc/coco_easy'
-    input_folder = '/home/lalo/linc/Verified_Annotation/'
+    output_folder = '/mnt/hdd1/lalo/coco_easy/'
+    input_folder = '/mnt/hdd1/lalo/Verified_Annotation/'
 
     convert_to_coco(input_folder, output_folder, 'train')
     with open(os.path.join(output_folder, 'train.json'), 'w') as f:

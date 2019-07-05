@@ -7,6 +7,7 @@ import torch.utils.data
 import torchvision
 import torchvision.models.detection
 import torchvision.models.detection.mask_rcnn
+from torch.utils.tensorboard import SummaryWriter
 
 from torchvision import transforms
 
@@ -36,17 +37,18 @@ def main(args):
     # Data loading code
     print("Loading data")
 
-    dataset, num_classes = get_coco(
+    dataset, num_classes, labels = get_coco(
         args.data_path, image_set='train', transforms=get_transform(train=True)
     )
+    print(f"Categorizing between {num_classes} classes")
     if args.overfit:
-        dataset_test, _ = get_coco(
+        dataset_test, _, _ = get_coco(
             args.data_path, image_set='train', transforms=get_transform(train=False),
         )
         print("Overfitting to train dataset! Only for debugging")
         assert len(dataset) == len(dataset_test)
     else:
-        dataset_test, _ = get_coco(
+        dataset_test, _, _ = get_coco(
             args.data_path, image_set='val', transforms=get_transform(train=False)
         )
 
@@ -105,12 +107,18 @@ def main(args):
         evaluate(model, data_loader_test, device=device)
         return
 
+    writer = SummaryWriter()
+
     print("Start training")
     start_time = time.time()
     for epoch in range(args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        train_one_epoch(model, optimizer, data_loader, device, epoch, args.print_freq)
+        start_epoch = time.time()
+        train_one_epoch(
+            model, optimizer, data_loader, device, epoch, args.print_freq, writer, labels
+        )
+        print(f"Epoch time {time.time() - start_epoch}")
         lr_scheduler.step()
         if args.output_dir:
             utils.save_on_master({
@@ -124,6 +132,7 @@ def main(args):
         # evaluate after every epoch
         evaluate(model, data_loader_test, device=device)
 
+    writer.close()
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Training time {}'.format(total_time_str))
@@ -133,10 +142,10 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='PyTorch Detection Training')
 
-    parser.add_argument('--data-path', default='/home/lalo/linc/coco', help='dataset')
+    parser.add_argument('--data-path', default='/mnt/hdd1/lalo/coco_easy', help='dataset')
     parser.add_argument('--model', default='fasterrcnn_resnet50_fpn', help='model')
     parser.add_argument('--device', default='cuda', help='device')
-    parser.add_argument('-b', '--batch-size', default=4, type=int)
+    parser.add_argument('-b', '--batch-size', default=2, type=int)
     parser.add_argument('--epochs', default=13, type=int, metavar='N',
                         help='number of total epochs to run')
     parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',

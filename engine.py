@@ -10,7 +10,7 @@ from coco_eval import CocoEvaluator
 import utils
 
 
-def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
+def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, writer, labels):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -24,6 +24,11 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
         lr_scheduler = utils.warmup_lr_scheduler(optimizer, warmup_iters, warmup_factor)
 
     for images, targets in metric_logger.log_every(data_loader, print_freq, header):
+        # Log input image and target. The model modifies the images in place it
+        # seems (normalizes them), so we log them before running them through model
+        image_with_boxes = utils.draw_boxes(images[0], targets[0], labels)
+        writer.add_image('Input image', image_with_boxes)
+
         images = list(image.to(device) for image in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 

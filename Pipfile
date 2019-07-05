@@ -9,6 +9,8 @@ verify_ssl = true
 torchvision = "*"
 opencv-python = "*"
 jupyter = "*"
+tb-nightly = "*"
+future = "*"
 
 [requires]
 python_version = "3.6"

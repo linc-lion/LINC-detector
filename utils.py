@@ -4,9 +4,11 @@ from collections import defaultdict, deque
 import datetime
 import pickle
 import time
+from PIL import ImageDraw
 
 import torch
 import torch.distributed as dist
+import torchvision
 
 import errno
 import os
@@ -308,3 +310,22 @@ def init_distributed_mode(args):
                                          world_size=args.world_size, rank=args.rank)
     torch.distributed.barrier()
     setup_for_distributed(args.rank == 0)
+
+
+convert_to_pil = torchvision.transforms.ToPILImage()
+convert_to_torch = torchvision.transforms.ToTensor()
+
+
+def draw_boxes(image, target, labels):
+    vert_size = 300
+    scale_factor = 1 / (image.shape[1] / vert_size)
+    image = torch.nn.functional.interpolate(
+        image[None], scale_factor=scale_factor, mode='bilinear', align_corners=False)[0]
+    boxes = target['boxes'] * scale_factor
+    text_labels = labels[target['labels']]
+    pil_image = convert_to_pil(image)
+    draw = ImageDraw.Draw(pil_image)
+    for box, label in zip(boxes, text_labels):
+        draw.rectangle(((box[0], box[1]), (box[2], box[3])), outline='red', width=4)
+        draw.text((box[0], box[1]), str(label))
+    return convert_to_torch(pil_image)

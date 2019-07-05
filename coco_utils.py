@@ -5,6 +5,7 @@ import json
 import torch
 import torch.utils.data
 import torchvision
+import numpy as np
 
 from pycocotools import mask as coco_mask
 from pycocotools.coco import COCO
@@ -61,7 +62,7 @@ class ConvertCocoPolysToMask(object):
         boxes = [obj["bbox"] for obj in anno]
         # guard against no boxes via resizing
         boxes = torch.as_tensor(boxes, dtype=torch.float32).reshape(-1, 4)
-        boxes[:, 2:] += boxes[:, :2]
+        # boxes[:, 2:] += boxes[:, :2]  # TODO: Is this okay?
         boxes[:, 0::2].clamp_(min=0, max=w)
         boxes[:, 1::2].clamp_(min=0, max=h)
 
@@ -235,12 +236,10 @@ def get_coco(root, image_set, transforms, mode='instances'):
     img_folder, ann_file = PATHS[image_set]
     img_folder = os.path.join(root, img_folder)
     ann_file = os.path.join(root, ann_file)
+    labels_file = os.path.join(root, 'labels.json')
 
-    # Count number of categories in dataset
-    category_ids = set()
-    ann_dict = json.load(open(ann_file, 'r'))['annotations']
-    for a in ann_dict:
-        category_ids.add(a['category_id'])
+    labels = np.array(json.load(open(labels_file, 'r')))
+    num_classes = len(labels) + 1  # Add 1 for the background class
 
     dataset = CocoDetection(img_folder, ann_file, transforms=transforms)
 
@@ -249,7 +248,7 @@ def get_coco(root, image_set, transforms, mode='instances'):
 
     # dataset = torch.utils.data.Subset(dataset, [i for i in range(500)])
 
-    return dataset, len(category_ids) + 1  # Add 1 for the background class
+    return dataset, num_classes, labels
 
 
 def get_coco_kp(root, image_set, transforms):
