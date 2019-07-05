@@ -1,9 +1,10 @@
 import os
 import xml.etree.ElementTree as ET
 import collections
-import hashlib
 import json
 from PIL import Image
+
+from utils import mkdir
 
 
 train_val_ratio = 5
@@ -66,34 +67,7 @@ coco_val = {
 }
 
 
-def parse_voc_xml(node):
-    voc_dict = {}
-    children = list(node)
-    if children:
-        def_dic = collections.defaultdict(list)
-        for dc in map(parse_voc_xml, children):
-            for ind, v in dc.items():
-                def_dic[ind].append(v)
-        voc_dict = {
-            node.tag:
-                {ind: v[0] if len(v) == 1 else v
-                 for ind, v in def_dic.items()}
-        }
-    if node.text:
-        text = node.text.strip()
-        if not children:
-            voc_dict[node.tag] = text
-    return voc_dict
-
-
-def deterministic_hash(string):
-    """Hashes to a 4 byte int deterministically."""
-    md5 = hashlib.md5()
-    md5.update(string.encode('utf-8'))
-    return int.from_bytes(md5.digest()[:4], byteorder='big')
-
-
-class ConvertLINC():
+class LINCDatasetConverter():
     def __init__(self):
         self.category_relationships = {
             'markings': set(['markings', 'ear-fl-marking', 'mouth-f-marking', 'eye-dr-l-marking', 'tooth-marking', 'nose-f-marking', 'nose-dl-marking', 'eye-fl-marking', 'ear-dr-l-marking', 'ear-f-r-marking', 'mouth-dr-marking', 'nose-dr-marking', 'mouth-sl-marking', 'ear-dr-marking', 'ear-sl-marking', 'eye-dl-l-marking', 'ear-dl-r-marking', 'mouth-dl-marking', 'full-body-markings', 'marking']),  # noqa
@@ -142,78 +116,130 @@ class ConvertLINC():
         print(output)
         return output
 
+    def parse_voc_xml(self, node):
+        voc_dict = {}
+        children = list(node)
+        if children:
+            def_dic = collections.defaultdict(list)
+            for dc in map(self.parse_voc_xml, children):
+                for ind, v in dc.items():
+                    def_dic[ind].append(v)
+            voc_dict = {
+                node.tag:
+                    {ind: v[0] if len(v) == 1 else v
+                     for ind, v in def_dic.items()}
+            }
+        if node.text:
+            text = node.text.strip()
+            if not children:
+                voc_dict[node.tag] = text
+        return voc_dict
 
-def convert_to_coco(root, output_dir, image_set):
-    converter = ConvertLINC()
+    def convert_to_coco(self, root, output_dir, image_set, trim_to, overfit):
+        # Check existence of root
+        if not os.path.isdir(root):
+            raise RuntimeError('Dataset not found.')
 
-    # Check existence of root
-    if not os.path.isdir(root):
-        raise RuntimeError('Dataset not found.')
+        # Crawl sub-directories
+        print(f"Crawling directories for {image_set} set...", end=' ')
+        obj_counter = 1
+        img_counter = 1
+        for root, dirs, files in os.walk(root):
+            dirs.sort()  # Lets make this deterministic so our ids are too.
+            for file_name in [os.path.join(root, f) for f in files]:
+                if os.path.splitext(file_name)[1] == '.xml':
+                    data = self.parse_voc_xml(ET.parse(file_name).getroot())
 
-    # Crawl sub-directories
-    print(f"Crawling directories for {image_set} set...", end=' ')
-    obj_counter = 1
-    img_counter = 1
-    for root, dirs, files in os.walk(root):
-        dirs.sort()  # Lets make this deterministic so our ids are too. NOTE: Not sure if this works
-        for file_name in [os.path.join(root, f) for f in files]:
-            if os.path.splitext(file_name)[1] == '.xml':
-                data = parse_voc_xml(ET.parse(file_name).getroot())
+                    # Ignore images with no objects in them
+                    try:
+                        objects = data['annotation']['object']
+                    except KeyError:
+                        continue
+                    objects = objects if type(objects) is list else [objects]
+                    image_path = os.path.join(root, data['annotation']['filename'])
+                    image_name = os.path.basename(image_path)
+                    img = Image.open(image_path)
 
-                # Ignore images with no objects in them
-                try:
-                    objects = data['annotation']['object']
-                except KeyError:
-                    continue
-                objects = objects if type(objects) is list else [objects]
-                image_path = os.path.join(root, data['annotation']['filename'])
-                image_name = os.path.basename(image_path)
-                img = Image.open(image_path)
-
-                # Define train/val sets
-                # Ignore image that don't belong in each set
-                if image_set == 'train' and img_counter % train_val_ratio > 0:
-                    coco_train['images'].append(
-                        converter.convert_img_to_coco_and_save(
-                            img_counter, image_name, img, os.path.join(output_dir, 'train')
+                    # Separate train/val sets
+                    # Ignore image if it doesn't belong to train set
+                    if overfit or (image_set == 'train' and img_counter % train_val_ratio > 0):
+                        coco_train['images'].append(
+                            self.convert_img_to_coco_and_save(
+                                img_counter, image_name, img, os.path.join(output_dir, 'train')
+                            )
                         )
-                    )
-                    for o in objects:
-                        try:
-                            target = converter.convert_obj_to_coco(o, img_counter, obj_counter)
-                        except ValueError:  # Ignore categories filtered from category_relationships
-                            continue
-                        coco_train['annotations'].append(target)
-                        obj_counter += 1
-                elif image_set == 'val' and img_counter % train_val_ratio == 0:
-                    coco_val['images'].append(
-                        converter.convert_img_to_coco_and_save(
-                            img_counter, image_name, img, os.path.join(output_dir, 'val')
+                        for o in objects:
+                            try:
+                                target = self.convert_obj_to_coco(
+                                    o, img_counter, obj_counter
+                                )
+                            # Ignore categories filtered from category_relationships
+                            except ValueError:
+                                continue
+                            coco_train['annotations'].append(target)
+                            obj_counter += 1
+                    # Ignore image if it doesn't belong to val set
+                    if overfit or (image_set == 'val' and img_counter % train_val_ratio == 0):
+                        coco_val['images'].append(
+                            self.convert_img_to_coco_and_save(
+                                img_counter, image_name, img, os.path.join(output_dir, 'val')
+                            )
                         )
-                    )
-                    for o in objects:
-                        try:
-                            target = converter.convert_obj_to_coco(o, img_counter, obj_counter)
-                        except ValueError:  # Ignore categories filtered from category_relationships
-                            continue
-                        coco_val['annotations'].append(target)
-                        obj_counter += 1
+                        for o in objects:
+                            try:
+                                target = self.convert_obj_to_coco(
+                                    o, img_counter, obj_counter
+                                )
+                            # Ignore categories filtered from category_relationships
+                            except ValueError:
+                                continue
+                            coco_val['annotations'].append(target)
+                            obj_counter += 1
 
-                img_counter += 1
+                    img_counter += 1
+                    if img_counter == trim_to:
+                        print("Created trimmed dataset")
+                        print(f"Done, parsed {img_counter} images.")
+                        print("Make sure you customized 'category_order_for_label' and"
+                              "'categories_to_ignore' before running!")
+                        return
 
-    with open(os.path.join(output_folder, 'labels.json'), 'w') as f:
-        json.dump(converter.category_order_for_label, f)
-    print(f"Done, got {img_counter} images.")
-    print("Make sure you customized 'category_order_for_label' and 'categories_to_ignore' before running!")  # noqa
+        print(f"Done, parsed {img_counter} images.")
+        print("Make sure you customized 'category_order_for_label' and 'categories_to_ignore'"
+              "before running!")
 
 
 if __name__ == "__main__":
-    output_folder = '/mnt/hdd1/lalo/coco_easy/'
-    input_folder = '/mnt/hdd1/lalo/Verified_Annotation/'
+    import argparse
+    parser = argparse.ArgumentParser(description='LINC Dataset Converter')
+    parser.add_argument('input_path', help='Path to input dataset folder')
+    parser.add_argument('-o', '--output-path', help='Path to output dataset folder')
+    parser.add_argument(
+        '--trim-to', default=0, type=int,
+        help='Create smaller dataset, useful for overfitting/debugging')
+    parser.add_argument(
+        "--overfit",
+        dest="overfit",
+        help="Make train and val datasets be the same, for overfitting for debugging.",
+        action="store_true",
+    )
+    args = parser.parse_args()
 
-    convert_to_coco(input_folder, output_folder, 'train')
-    with open(os.path.join(output_folder, 'train.json'), 'w') as f:
+    mkdir(args.output_path)
+    mkdir(os.path.join(args.output_path, 'train'))
+    mkdir(os.path.join(args.output_path, 'val'))
+
+    # Create train dataset
+    converter = LINCDatasetConverter()
+    converter.convert_to_coco(args.input_path, args.output_path, 'train', args.trim_to, args.overfit)
+    with open(os.path.join(args.output_path, 'train.json'), 'w') as f:
         json.dump(coco_train, f)
-    convert_to_coco(input_folder, output_folder, 'val')
-    with open(os.path.join(output_folder, 'val.json'), 'w') as f:
+
+    # Create validation dataset
+    converter.convert_to_coco(args.input_path, args.output_path, 'val', args.trim_to, args.overfit)
+    with open(os.path.join(args.output_path, 'val.json'), 'w') as f:
         json.dump(coco_val, f)
+
+    # Save text labels to file
+    with open(os.path.join(args.output_path, 'labels.json'), 'w') as f:
+        json.dump(converter.category_order_for_label, f)
