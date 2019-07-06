@@ -94,10 +94,18 @@ class LINCDatasetConverter():
             else:
                 continue
 
-    def convert_obj_to_coco(self, o, img_counter, obj_counter):
+    def convert_obj_to_coco_format(self, o, img_counter, obj_counter):
         annotation = {}
         bbox = o['bndbox']
-        bbox = [float(bbox['xmin']), float(bbox['ymin']), float(bbox['xmax']), float(bbox['ymax'])]
+        # COCO format is x1, y1, width, height
+        # LINC format is x1, y1, x2, y2
+        # Both meassured from top left corner of image
+        bbox = [
+            float(bbox['xmin']),
+            float(bbox['ymin']),
+            float(bbox['xmax']) - float(bbox['xmin']),
+            float(bbox['ymax']) - float(bbox['ymin'])
+        ]
         annotation['bbox'] = bbox
         annotation['image_id'] = img_counter
         annotation['area'] = (bbox[3] - bbox[1]) * (bbox[2] - bbox[0])
@@ -170,7 +178,7 @@ class LINCDatasetConverter():
                         )
                         for o in objects:
                             try:
-                                target = self.convert_obj_to_coco(
+                                target = self.convert_obj_to_coco_format(
                                     o, img_counter, obj_counter
                                 )
                             # Ignore categories filtered from category_relationships
@@ -187,7 +195,7 @@ class LINCDatasetConverter():
                         )
                         for o in objects:
                             try:
-                                target = self.convert_obj_to_coco(
+                                target = self.convert_obj_to_coco_format(
                                     o, img_counter, obj_counter
                                 )
                             # Ignore categories filtered from category_relationships
