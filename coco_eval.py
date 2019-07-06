@@ -154,6 +154,18 @@ class CocoEvaluator(object):
             )
         return coco_results
 
+    @property
+    def bbox_map_50_95(self):
+        return self.coco_eval['bbox'].stats[0]
+
+    @property
+    def bbox_map_50(self):
+        return self.coco_eval['bbox'].stats[1]
+
+    @property
+    def bbox_map_75(self):
+        return self.coco_eval['bbox'].stats[2]
+
 
 def convert_to_xywh(boxes):
     xmin, ymin, xmax, ymax = boxes.unbind(1)

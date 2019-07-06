@@ -37,7 +37,7 @@ def main(args):
     # Data loading code
     print("Loading data")
 
-    dataset, num_classes, labels = get_coco(
+    dataset, num_classes, label_names = get_coco(
         args.data_path, image_set='train', transforms=get_transform(train=True)
     )
     print(f"Categorizing between {num_classes} classes")
@@ -76,6 +76,8 @@ def main(args):
         sampler=test_sampler, num_workers=args.workers,
         collate_fn=utils.collate_fn)
 
+    writer = SummaryWriter()
+
     print("Creating model")
     model = torchvision.models.detection.__dict__[args.model](num_classes=num_classes,
                                                               pretrained=args.pretrained)
@@ -104,10 +106,11 @@ def main(args):
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
 
     if args.test_only:
-        evaluate(model, data_loader_test, device=device)
+        evaluate(
+            model, data_loader_test, 0, writer, args.draw_threshold,
+            label_names, args.num_draw_predictions, device=device
+        )
         return
-
-    writer = SummaryWriter()
 
     print("Start training")
     start_time = time.time()
@@ -116,7 +119,7 @@ def main(args):
             train_sampler.set_epoch(epoch)
         start_epoch = time.time()
         train_one_epoch(
-            model, optimizer, data_loader, device, epoch, args.print_freq, writer, labels
+            model, optimizer, data_loader, device, epoch, args.print_freq, writer, label_names
         )
         print(f"Epoch time {time.time() - start_epoch}")
         lr_scheduler.step()
@@ -129,8 +132,11 @@ def main(args):
                 os.path.join(args.output_dir, 'model_{}.pth'.format(epoch))
             )
 
-        # evaluate after every epoch
-        evaluate(model, data_loader_test, device=device)
+        if epoch % args.evaluate_after_num_epochs == 0:
+            evaluate(
+                model, data_loader_test, epoch, writer, args.draw_threshold,
+                label_names, args.num_draw_predictions, device=device
+            )
 
     writer.close()
     total_time = time.time() - start_time
@@ -163,6 +169,18 @@ if __name__ == "__main__":
     parser.add_argument('--output-dir', default='', help='path where to save')
     parser.add_argument('--resume', default='', help='resume from checkpoint')
     parser.add_argument('--aspect-ratio-group-factor', default=0, type=int)
+    parser.add_argument('--num-draw-predictions', default=5, type=int, help="How many predictions to draw")
+    parser.add_argument(
+        '--evaluate-after-num-epochs',
+        default=2,
+        type=int,
+        help="How many training epochs to run between each evaluation on the validation set"
+    )
+    parser.add_argument(
+        '--draw-threshold', default=0.5,
+        type=float,
+        help="Draw predicted objects if above this confidence threshold"
+    )
     parser.add_argument(
         "--test-only",
         dest="test_only",
@@ -178,7 +196,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--overfit",
         dest="overfit",
-        help="Eval and train on the train set, for testing overfitting",
+        help="Eval and train on the val set, for testing overfitting",
         action="store_true",
     )
 

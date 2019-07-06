@@ -10,7 +10,7 @@ from coco_eval import CocoEvaluator
 import utils
 
 
-def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, writer, labels):
+def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, writer, label_names):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -23,11 +23,16 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, wr
 
         lr_scheduler = utils.warmup_lr_scheduler(optimizer, warmup_iters, warmup_factor)
 
+    first_step_of_epoch = True
     for images, targets in metric_logger.log_every(data_loader, print_freq, header):
-        # Log input image and target. The model modifies the images in place it
-        # seems (normalizes them), so we log them before running them through model
-        image_with_boxes = utils.draw_boxes(images[0], targets[0], labels)
-        writer.add_image('Input image', image_with_boxes)
+        if first_step_of_epoch:
+            # Write input image and target to summary. The model modifies its input images in place it
+            # seems (normalization), so we save them before running them through model
+            image_with_boxes = utils.draw_boxes(
+                images[0], targets[0]['boxes'], targets[0]['labels'], label_names
+            )
+            writer.add_image('Target image', image_with_boxes, global_step=epoch)
+            first_step_of_epoch = False
 
         images = list(image.to(device) for image in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
@@ -56,6 +61,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, wr
 
         metric_logger.update(loss=losses_reduced, **loss_dict_reduced)
         metric_logger.update(lr=optimizer.param_groups[0]["lr"])
+    writer.add_scalar('Loss', losses_reduced, global_step=epoch)
 
 
 def _get_iou_types(model):
@@ -71,7 +77,7 @@ def _get_iou_types(model):
 
 
 @torch.no_grad()
-def evaluate(model, data_loader, device):
+def evaluate(model, data_loader, epoch, writer, draw_threshold, label_names, num_draw_predictions, device):
     n_threads = torch.get_num_threads()
     # FIXME remove this and make paste_masks_in_image run on the GPU
     torch.set_num_threads(1)
@@ -84,7 +90,12 @@ def evaluate(model, data_loader, device):
     iou_types = _get_iou_types(model)
     coco_evaluator = CocoEvaluator(coco, iou_types)
 
+    i = 0
     for image, targets in metric_logger.log_every(data_loader, 100, header):
+        # The model modifies its input images in place it seems (normalization), so we save them
+        # for drawing before running them through model.
+        pre_model_image = image[0]
+
         image = list(img.to(device) for img in image)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
@@ -101,6 +112,19 @@ def evaluate(model, data_loader, device):
         evaluator_time = time.time() - evaluator_time
         metric_logger.update(model_time=model_time, evaluator_time=evaluator_time)
 
+        if i % int(round(len(data_loader) / num_draw_predictions)) == 0:
+            scores = outputs[0]['scores']
+            top_scores_filter = scores > draw_threshold
+            top_scores = scores[top_scores_filter]
+            top_boxes = outputs[0]['boxes'][top_scores_filter]
+            top_labels = outputs[0]['labels'][top_scores_filter]
+            if len(top_scores) > 0:
+                image_with_boxes = utils.draw_boxes(
+                    pre_model_image, top_boxes, top_labels, label_names, scores
+                )
+                writer.add_image(f'Eval image {i}', image_with_boxes, global_step=epoch)
+        i += 1
+
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     print("Averaged stats:", metric_logger)
@@ -110,4 +134,9 @@ def evaluate(model, data_loader, device):
     coco_evaluator.accumulate()
     coco_evaluator.summarize()
     torch.set_num_threads(n_threads)
+
+    # Write evaluation results to summary
+    writer.add_scalar('mAP_0.50-0.95', coco_evaluator.bbox_map_50_95, global_step=epoch)
+    writer.add_scalar('mAP_0.50', coco_evaluator.bbox_map_50, global_step=epoch)
+    writer.add_scalar('mAP_0.75', coco_evaluator.bbox_map_75, global_step=epoch)
     return coco_evaluator

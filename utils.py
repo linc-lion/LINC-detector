@@ -316,16 +316,21 @@ convert_to_pil = torchvision.transforms.ToPILImage()
 convert_to_torch = torchvision.transforms.ToTensor()
 
 
-def draw_boxes(image, target, labels):
+def draw_boxes(image, boxes, labels, label_names, scores=None):
+    image = image.cpu()
     vert_size = 300
     scale_factor = 1 / (image.shape[1] / vert_size)
     image = torch.nn.functional.interpolate(
         image[None], scale_factor=scale_factor, mode='bilinear', align_corners=False)[0]
-    boxes = target['boxes'] * scale_factor
-    text_labels = labels[target['labels']]
+    boxes = boxes * scale_factor
+    # Substract 1 from labels if we are on eval mode (scores != None) to ignore the background class.
+    # TODO not sure if this is actually correct
+    labels = labels if scores is None else labels - 1
+    text_labels = label_names[labels]
     pil_image = convert_to_pil(image)
     draw = ImageDraw.Draw(pil_image)
-    for box, label in zip(boxes, text_labels):
+    for i, (box, label) in enumerate(zip(boxes, text_labels)):
         draw.rectangle(((box[0], box[1]), (box[2], box[3])), outline='red', width=4)
-        draw.text((box[0], box[1]), str(label))
+        text = str(label) if scores is None else f"{label}|{scores[i]:.2f}"
+        draw.text((box[0], box[1]), str(text))
     return convert_to_torch(pil_image)
