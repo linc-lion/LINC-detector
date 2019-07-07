@@ -90,7 +90,7 @@ def evaluate(model, data_loader, epoch, writer, draw_threshold, label_names, num
     iou_types = _get_iou_types(model)
     coco_evaluator = CocoEvaluator(coco, iou_types)
 
-    i = 0
+    images_evaluated, images_written_to_summary = 0, 0
     for image, targets in metric_logger.log_every(data_loader, 100, header):
         # The model modifies its input images in place it seems (normalization), so we save them
         # for drawing before running them through model.
@@ -113,7 +113,7 @@ def evaluate(model, data_loader, epoch, writer, draw_threshold, label_names, num
         metric_logger.update(model_time=model_time, evaluator_time=evaluator_time)
 
         # Write evaluated images to summary
-        if i % int(round(len(data_loader) / num_draw_predictions)) == 0:
+        if images_evaluated % int(round(len(data_loader) / num_draw_predictions)) == 0:
             scores = outputs[0]['scores']
             top_scores_filter = scores > draw_threshold
             top_scores = scores[top_scores_filter]
@@ -123,8 +123,11 @@ def evaluate(model, data_loader, epoch, writer, draw_threshold, label_names, num
                 image_with_boxes = utils.draw_boxes(
                     pre_model_image, top_boxes, top_labels, label_names, scores
                 )
-                writer.add_image(f'Eval image {i}', image_with_boxes, global_step=epoch)
-        i += 1
+                writer.add_image(
+                    f'Eval image {images_written_to_summary}', image_with_boxes, global_step=epoch
+                )
+            images_written_to_summary += 1
+        images_evaluated += 1
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
