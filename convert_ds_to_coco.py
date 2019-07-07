@@ -111,7 +111,8 @@ class LINCDatasetConverter():
         annotation['area'] = (bbox[3] - bbox[1]) * (bbox[2] - bbox[0])
         annotation['iscrowd'] = 0
         parent_category = self.get_parent_category(o['name'])
-        annotation['category_id'] = self.category_order_for_label.index(parent_category)
+        # COCO Categories are 1 indexed
+        annotation['category_id'] = self.category_order_for_label.index(parent_category) + 1
         annotation['id'] = obj_counter
         print(annotation)
         return annotation

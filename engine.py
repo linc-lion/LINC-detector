@@ -112,6 +112,7 @@ def evaluate(model, data_loader, epoch, writer, draw_threshold, label_names, num
         evaluator_time = time.time() - evaluator_time
         metric_logger.update(model_time=model_time, evaluator_time=evaluator_time)
 
+        # Write evaluated images to summary
         if i % int(round(len(data_loader) / num_draw_predictions)) == 0:
             scores = outputs[0]['scores']
             top_scores_filter = scores > draw_threshold

@@ -1,6 +1,7 @@
 import datetime
 import os
 import time
+import sys
 
 import torch
 import torch.utils.data
@@ -76,7 +77,17 @@ def main(args):
         sampler=test_sampler, num_workers=args.workers,
         collate_fn=utils.collate_fn)
 
-    writer = SummaryWriter()
+    if args.run_name:
+        log_dir_path = f"runs/{args.run_name}" if args.run_name else None
+        if os.path.isdir(log_dir_path):
+            print(f"\nError, summary folder 'runs/{args.run_name}' already exists! Chose another name")
+            exit()
+    else:
+        log_dir_path = None
+    writer = SummaryWriter(log_dir=log_dir_path)
+    # Separate args summary into several lines as per: https://stackoverflow.com/a/52784607
+    writer.add_text('Arguments', str(args).replace(", ", ",  \n").replace("Namespace(", "").replace(")", ""))
+    writer.add_text('Command ran', f"python {' '.join(sys.argv)}")
 
     print("Creating model")
     model = torchvision.models.detection.__dict__[args.model](num_classes=num_classes,
@@ -122,6 +133,7 @@ def main(args):
             model, optimizer, data_loader, device, epoch, args.print_freq, writer, label_names
         )
         print(f"Epoch time {time.time() - start_epoch}")
+        writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], global_step=epoch)
         lr_scheduler.step()
         if args.output_dir:
             utils.save_on_master({
@@ -170,6 +182,11 @@ if __name__ == "__main__":
     parser.add_argument('--resume', default='', help='resume from checkpoint')
     parser.add_argument('--aspect-ratio-group-factor', default=0, type=int)
     parser.add_argument('--num-draw-predictions', default=5, type=int, help="How many predictions to draw")
+    parser.add_argument(
+        '-n',
+        '--run-name',
+        default=None,
+        help='Name this run in order to be able to find it in Tensorboard easily')
     parser.add_argument(
         '--evaluate-after-num-epochs',
         default=2,
