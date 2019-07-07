@@ -2,6 +2,7 @@ import datetime
 import os
 import time
 import sys
+import subprocess
 
 import torch
 import torch.utils.data
@@ -37,11 +38,10 @@ def main(args):
 
     # Data loading code
     print("Loading data")
-
     dataset, num_classes, label_names = get_coco(
         args.data_path, image_set='train', transforms=get_transform(train=True)
     )
-    print(f"Categorizing between {num_classes} classes")
+    print(f"Categorizing into {num_classes} classes")
     if args.overfit:
         dataset_test, _, _ = get_coco(
             args.data_path, image_set='train', transforms=get_transform(train=False),
@@ -77,6 +77,7 @@ def main(args):
         sampler=test_sampler, num_workers=args.workers,
         collate_fn=utils.collate_fn)
 
+    # Create summary writer for Tensorboard
     if args.run_name:
         log_dir_path = f"runs/{args.run_name}" if args.run_name else None
         if os.path.isdir(log_dir_path):
@@ -85,9 +86,27 @@ def main(args):
     else:
         log_dir_path = None
     writer = SummaryWriter(log_dir=log_dir_path)
-    # Separate args summary into several lines as per: https://stackoverflow.com/a/52784607
+
+    # Add some useful text summaries (Tensorboard uses markdown to render text).
+    writer.add_text('Command executed', f"python {' '.join(sys.argv)}")
     writer.add_text('Arguments', str(args).replace(", ", ",  \n").replace("Namespace(", "").replace(")", ""))
-    writer.add_text('Command ran', f"python {' '.join(sys.argv)}")
+
+    # Add repo status data to summary
+    try:
+        writer.add_text(
+            'Git status',
+            subprocess.check_output(
+                "git log --name-status HEAD^..HEAD".split()
+            ).decode('utf-8').replace('\n', '  \n')
+        )
+        writer.add_text(
+            'Git diff',
+            subprocess.check_output(
+                "git diff".split()
+            ).decode('utf-8').replace('\n', '  \n')
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        print("\nGit not installed or not running from a repo, summary won't have git data!\n")
 
     print("Creating model")
     model = torchvision.models.detection.__dict__[args.model](num_classes=num_classes,
