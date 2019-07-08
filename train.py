@@ -160,7 +160,8 @@ def main(args):
                 'model': model_without_ddp.state_dict(),
                 'optimizer': optimizer.state_dict(),
                 'lr_scheduler': lr_scheduler.state_dict(),
-                'args': args},
+                'args': args,
+                'label_names': label_names},
                 os.path.join(writer.log_dir, 'model_{}.pth'.format(epoch))
             )
 
@@ -175,7 +176,8 @@ def main(args):
         'model': model_without_ddp.state_dict(),
         'optimizer': optimizer.state_dict(),
         'lr_scheduler': lr_scheduler.state_dict(),
-        'args': args},
+        'args': args,
+        'label_names': label_names},
         os.path.join(writer.log_dir, 'model_{}_finished.pth'.format(epoch))
     )
 
@@ -195,8 +197,8 @@ if __name__ == "__main__":
     parser.add_argument('-b', '--batch-size', default=2, type=int)
     parser.add_argument('--epochs', default=13, type=int, metavar='N',
                         help='number of total epochs to run')
-    parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
-                        help='number of data loading workers (default: 16)')
+    parser.add_argument('-j', '--workers', default=8, type=int, metavar='N',
+                        help='number of data loading workers (default: 8)')
     parser.add_argument('--lr', default=0.02, type=float, help='initial learning rate')
     parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                         help='momentum')
@@ -204,7 +206,7 @@ if __name__ == "__main__":
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
     parser.add_argument('--lr-step-size', default=8, type=int, help='decrease lr every step-size epochs')  # noqa
-    parser.add_argument('--lr-steps', default=[8, 11], nargs='+', type=int, help='decrease lr every step-size epochs')  # noqa
+    parser.add_argument('--lr-steps', default=[10, 11], nargs='+', type=int, help='decrease lr every step-size epochs')  # noqa
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')  # noqa
     parser.add_argument('--print-freq', default=20, type=int, help='print frequency')
     parser.add_argument('--resume', default='', help='resume from checkpoint')
