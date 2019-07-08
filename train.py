@@ -154,20 +154,30 @@ def main(args):
         print(f"Epoch time {time.time() - start_epoch}")
         writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], global_step=epoch)
         lr_scheduler.step()
-        if args.output_dir:
+
+        if args.save_every_num_epochs and epoch % args.save_every_num_epochs == 0:
             utils.save_on_master({
                 'model': model_without_ddp.state_dict(),
                 'optimizer': optimizer.state_dict(),
                 'lr_scheduler': lr_scheduler.state_dict(),
                 'args': args},
-                os.path.join(args.output_dir, 'model_{}.pth'.format(epoch))
+                os.path.join(writer.log_dir, 'model_{}.pth'.format(epoch))
             )
 
-        if epoch % args.evaluate_after_num_epochs == 0:
+        if epoch % args.evaluate_every_num_epochs == 0:
             evaluate(
                 model, data_loader_test, epoch, writer, args.draw_threshold,
                 label_names, args.num_draw_predictions, device=device
             )
+
+    # Save after training is done
+    utils.save_on_master({
+        'model': model_without_ddp.state_dict(),
+        'optimizer': optimizer.state_dict(),
+        'lr_scheduler': lr_scheduler.state_dict(),
+        'args': args},
+        os.path.join(writer.log_dir, 'model_{}_finished.pth'.format(epoch))
+    )
 
     writer.close()
     total_time = time.time() - start_time
@@ -197,7 +207,6 @@ if __name__ == "__main__":
     parser.add_argument('--lr-steps', default=[8, 11], nargs='+', type=int, help='decrease lr every step-size epochs')  # noqa
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')  # noqa
     parser.add_argument('--print-freq', default=20, type=int, help='print frequency')
-    parser.add_argument('--output-dir', default='', help='path where to save')
     parser.add_argument('--resume', default='', help='resume from checkpoint')
     parser.add_argument('--aspect-ratio-group-factor', default=0, type=int)
     parser.add_argument('--num-draw-predictions', default=5, type=int, help="How many predictions to draw")
@@ -207,15 +216,21 @@ if __name__ == "__main__":
         default=None,
         help='Name this run in order to be able to find it in Tensorboard easily')
     parser.add_argument(
-        '--evaluate-after-num-epochs',
+        '--evaluate-every-num-epochs',
         default=2,
         type=int,
         help="How many training epochs to run between each evaluation on the validation set"
     )
     parser.add_argument(
+        '--save-every-num-epochs',
+        default=None,
+        type=int,
+        help="How many training epochs to run between each saving of the model to disk"
+    )
+    parser.add_argument(
         '--draw-threshold', default=0.5,
         type=float,
-        help="Draw predicted objects if above this confidence threshold"
+        help="Draw predicted objects in summary if above this confidence threshold"
     )
     parser.add_argument(
         "--test-only",
@@ -242,8 +257,5 @@ if __name__ == "__main__":
     parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')  # noqa
 
     args = parser.parse_args()
-
-    if args.output_dir:
-        utils.mkdir(args.output_dir)
 
     main(args)
