@@ -1,3 +1,6 @@
 datasets/
 __pycache__/
 runs/
+old_runs/
+sample_pictures/
+prediction_outputs/
