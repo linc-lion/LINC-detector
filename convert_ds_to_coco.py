@@ -70,13 +70,35 @@ coco_val = {
 class LINCDatasetConverter():
     def __init__(self):
         self.category_relationships = {
-            'markings': set(['markings', 'ear-fl-marking', 'mouth-f-marking', 'eye-dr-l-marking', 'tooth-marking', 'nose-f-marking', 'nose-dl-marking', 'eye-fl-marking', 'ear-dr-l-marking', 'ear-f-r-marking', 'mouth-dr-marking', 'nose-dr-marking', 'mouth-sl-marking', 'ear-dr-marking', 'ear-sl-marking', 'eye-dl-l-marking', 'ear-dl-r-marking', 'mouth-dl-marking', 'full-body-markings', 'marking']),  # noqa
-            'cv': set(['cv-sright', 'cv-r', 'cv-dr-r', 'cv-f', 'cv-l', 'cv-sr', 'cv-dr', 'cv-sl', 'cv-dl-r', 'cv-dr-l', 'cv-dl', 'cv-front']),  # noqa
-            'nose': set(['nose-dl', 'nose-dr', 'nose-l', 'nose-sl', 'nose-dl-l', 'nose-fl', 'nose-sr', 'nose', 'nose-f', 'nose-r', 'nose-dr-r', 'nose-slw']),  # noqa
-            'ear': set(['ear-sl', 'ear-sr-r', 'ear-dr-r-marking', 'ear-sr-marking', 'ear-fl', 'ear-dl-l-marking', 'ear-dr-r', 'ear-fr', 'ear-fr-marking', 'ear-dl-r', 'ear-dl-l', 'ear-dr', 'ear-sr-l', 'ear-f', 'ear-sr', 'ear-dl', 'ear-f-l', 'ear-dr-l', 'ear-f-r']), # noqa
-            'whisker_area': set(['whikser-dr', 'whikser-dl', 'whisker-r', 'whisker-s', 'whisker-sr', 'whisker-dl', 'whisker-sl', 'whisker-l', 'whisker-dr', 'whiske-dr', 'whisker-f']),  # noqa
+            'markings': set([
+                'markings', 'ear-fl-marking', 'mouth-f-marking', 'eye-dr-l-marking', 'tooth-marking',
+                'nose-f-marking', 'nose-dl-marking', 'eye-fl-marking', 'ear-dr-l-marking',
+                'ear-f-r-marking', 'mouth-dr-marking', 'nose-dr-marking', 'mouth-sl-marking',
+                'ear-dr-marking', 'ear-sl-marking', 'eye-dl-l-marking', 'ear-dl-r-marking',
+                'mouth-dl-marking', 'full-body-markings', 'marking'
+            ]),
+            'cv': set([
+                'cv-sright', 'cv-r', 'cv-dr-r', 'cv-f', 'cv-l', 'cv-sr', 'cv-dr', 'cv-sl', 'cv-dl-r',
+                'cv-dr-l', 'cv-dl', 'cv-front'
+            ]),
+            'nose': set([
+                'nose-dl', 'nose-dr', 'nose-l', 'nose-sl', 'nose-dl-l', 'nose-fl', 'nose-sr',
+                'nose', 'nose-f', 'nose-r', 'nose-dr-r', 'nose-slw'
+            ]),
+            'ear': set([
+                'ear-sl', 'ear-sr-r', 'ear-dr-r-marking', 'ear-sr-marking', 'ear-fl', 'ear-dl-l-marking',
+                'ear-dr-r', 'ear-fr', 'ear-fr-marking', 'ear-dl-r', 'ear-dl-l', 'ear-dr', 'ear-sr-l',
+                'ear-f', 'ear-sr', 'ear-dl', 'ear-f-l', 'ear-dr-l', 'ear-f-r'
+            ]),
+            'whisker_area': set([
+                'whikser-dr', 'whikser-dl', 'whisker-r', 'whisker-s', 'whisker-sr', 'whisker-dl',
+                'whisker-sl', 'whisker-l', 'whisker-dr', 'whiske-dr', 'whisker-f'
+            ]),
             'mouth': set(['mouth-dr', 'mouth-dl']),
-            'eye': set(['eye-dr', 'eye-dl-r', 'eye-d-l', 'eye-dr-r', 'eye-fl', 'eye-sl', 'eye-f-r', 'eye-sr-l', 'eye-sr-r', 'eye-fr', 'eye-f', 'eye-dl', 'eye-sr', 'eye-dr-l', 'eye-f-l', 'eye-dl-l']),  # noqa
+            'eye': set([
+                'eye-dr', 'eye-dl-r', 'eye-d-l', 'eye-dr-r', 'eye-fl', 'eye-sl', 'eye-f-r', 'eye-sr-l',
+                'eye-sr-r', 'eye-fr', 'eye-f', 'eye-dl', 'eye-sr', 'eye-dr-l', 'eye-f-l', 'eye-dl-l'
+            ]),
             'whisker_spot': set(['ws']),
             'full_body': set(['full-body']),
         }
