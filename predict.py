@@ -1,4 +1,5 @@
 import sys
+import time
 import torch
 from PIL import Image
 import torchvision
@@ -11,24 +12,33 @@ convert_to_pil = torchvision.transforms.ToPILImage()
 
 
 def main(image_path, model_path, output_path):
+    print('Loading image... ', end='', flush=True)
     device = 'cuda' if torch.has_cuda else 'cpu'
     image = to_tensor(Image.open(image_path)).to(device)
+    print('Done.')
 
-    print('Loading checkpoint from hardrive... ', end='')
+    print('Loading checkpoint from hardrive... ', end='', flush=True)
     checkpoint = torch.load(model_path, map_location=device)
     label_names = checkpoint['label_names']
-    print('Done!')
+    print('Done.')
 
-    model = torchvision.models.detection.fasterrcnn_resnet50_fpn(num_classes=len(label_names) + 1)
+    print('Building model and loading checkpoint into it... ', end='', flush=True)
+    model = torchvision.models.detection.fasterrcnn_resnet50_fpn(
+        num_classes=len(label_names) + 1, pretrained_backbone=False
+    )
     model.to(device)
 
     model.load_state_dict(checkpoint['model'])
     model.eval()
+    print('Done.')
 
-    print('Running image through model... ', end='')
+    print('Running image through model... ', end='', flush=True)
+    tic = time.time()
     outputs = model([image])
-    print('Done!')
+    toc = time.time()
+    print(f'Done in {toc - tic:.2f} seconds!')
 
+    print(f'Saving image to {output_path}... ', end='', flush=True)
     scores = outputs[0]['scores']
     top_scores_filter = scores > draw_confidence_threshold
     top_scores = scores[top_scores_filter]
@@ -43,6 +53,7 @@ def main(image_path, model_path, output_path):
         exit()
     pil_picture = convert_to_pil(image_with_boxes)
     pil_picture.save(output_path)
+    print('Done.')
 
 
 if __name__ == '__main__':
