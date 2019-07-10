@@ -99,15 +99,23 @@ class LINCDatasetConverter():
                 'eye-dr', 'eye-dl-r', 'eye-d-l', 'eye-dr-r', 'eye-fl', 'eye-sl', 'eye-f-r', 'eye-sr-l',
                 'eye-sr-r', 'eye-fr', 'eye-f', 'eye-dl', 'eye-sr', 'eye-dr-l', 'eye-f-l', 'eye-dl-l'
             ]),
-            'whisker_spot': set(['ws']),
+            'ws': set(['ws']),
             'full_body': set(['full-body']),
         }
 
         # Customize dataset
-        self.categories_to_ignore = ['markings', 'whisker_spot', 'full_body']
+        self.categories_to_ignore = [
+            'markings', 'cv', 'nose', 'ear', 'whisker_area', 'mouth', 'eye', 'full_body'
+        ]
         for cat in self.categories_to_ignore:
             del(self.category_relationships[cat])
-        self.category_order_for_label = ['cv', 'nose', 'ear', 'whisker_area', 'mouth', 'eye']
+        self.category_order_for_label = ['ws']
+
+    def ignore_picture(self, objects):
+        labels = set(o['name'] for o in objects)
+        if not('ws' in labels):
+            return True
+        return False
 
     def get_parent_category(self, child):
         for parent, children in self.category_relationships.items():
@@ -136,7 +144,7 @@ class LINCDatasetConverter():
         # COCO Categories are 1 indexed
         annotation['category_id'] = self.category_order_for_label.index(parent_category) + 1
         annotation['id'] = obj_counter
-        print(annotation)
+        # print(annotation)
         return annotation
 
     def convert_img_to_coco_and_save(self, img_counter, image_name, img, output_folder):
@@ -144,7 +152,8 @@ class LINCDatasetConverter():
         output = {
             'id': img_counter, 'file_name': image_name, 'height': img.size[1], 'width': img.size[0]
         }
-        print(output)
+        # print(output)
+        print('.', flush=True, end='')
         return output
 
     def parse_voc_xml(self, node):
@@ -172,9 +181,10 @@ class LINCDatasetConverter():
             raise RuntimeError('Dataset not found.')
 
         # Crawl sub-directories
-        print(f"Crawling directories for {image_set} set...", end=' ')
+        print(f"Crawling directories for {image_set} set", end='')
         obj_counter = 1
         img_counter = 1
+        parsed_img_counter = 1
         for root, dirs, files in os.walk(root):
             dirs.sort()  # Lets make this deterministic so our ids are too.
             for file_name in [os.path.join(root, f) for f in files]:
@@ -187,11 +197,16 @@ class LINCDatasetConverter():
                     except KeyError:
                         continue
                     objects = objects if type(objects) is list else [objects]
+
+                    # Filter images according to custom rule
+                    if self.ignore_picture(objects): continue
+
+                    # Load image
                     image_path = os.path.join(root, data['annotation']['filename'])
                     image_name = os.path.basename(image_path)
                     img = Image.open(image_path)
 
-                    # Separate train/val sets
+                    # --- SEPARATE TRAIN AND VAL SETS ---
                     # Ignore image if it doesn't belong to train set
                     if overfit or (image_set == 'train' and img_counter % train_val_ratio > 0):
                         coco_train['images'].append(
@@ -209,6 +224,8 @@ class LINCDatasetConverter():
                                 continue
                             coco_train['annotations'].append(target)
                             obj_counter += 1
+                        parsed_img_counter += 1
+
                     # Ignore image if it doesn't belong to val set
                     if overfit or (image_set == 'val' and img_counter % train_val_ratio == 0):
                         coco_val['images'].append(
@@ -226,18 +243,17 @@ class LINCDatasetConverter():
                                 continue
                             coco_val['annotations'].append(target)
                             obj_counter += 1
+                        parsed_img_counter += 1
 
                     img_counter += 1
+
+                    # Escape function when we have reached the max number of images if trimming dataset
                     if img_counter == trim_to:
+                        print(f"\nDone, parsed {img_counter} images.")
                         print("Created trimmed dataset")
-                        print(f"Done, parsed {img_counter} images.")
-                        print("Make sure you customized 'category_order_for_label' and"
-                              "'categories_to_ignore' before running!")
                         return
 
-        print(f"Done, parsed {img_counter} images.")
-        print("Make sure you customized 'category_order_for_label' and 'categories_to_ignore'"
-              "before running!")
+        print(f"\nDone, parsed {parsed_img_counter - 1}/{img_counter - 1} images.")
 
 
 if __name__ == "__main__":
@@ -274,3 +290,7 @@ if __name__ == "__main__":
     # Save text labels to file
     with open(os.path.join(args.output_path, 'labels.json'), 'w') as f:
         json.dump(converter.category_order_for_label, f)
+
+
+print("Make sure you customized 'category_order_for_label', 'ignore_picture' and "
+      "'categories_to_ignore' before running!")
