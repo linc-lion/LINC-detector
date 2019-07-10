@@ -5,3 +5,4 @@ old_runs/
 sample_pictures/
 prediction_outputs/
 .ipynb_checkpoints/
+datasets
