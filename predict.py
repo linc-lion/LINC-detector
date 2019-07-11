@@ -11,9 +11,12 @@ to_tensor = torchvision.transforms.ToTensor()
 convert_to_pil = torchvision.transforms.ToPILImage()
 
 
-def main(image_path, model_path, output_path):
+@torch.no_grad()
+def main(image_path, model_path, output_path, cpu):
+    device = 'cuda' if torch.has_cuda and not cpu else 'cpu'
+    print(f"Running inference on {device} device")
+
     print('Loading image... ', end='', flush=True)
-    device = 'cuda' if torch.has_cuda else 'cpu'
     image = to_tensor(Image.open(image_path)).to(device)
     print('Done.')
 
@@ -57,7 +60,14 @@ def main(image_path, model_path, output_path):
 
 
 if __name__ == '__main__':
-    image_path = sys.argv[1]
-    model_path = sys.argv[2]
-    output_path = sys.argv[3]
-    main(image_path, model_path, output_path)
+    import argparse
+    parser = argparse.ArgumentParser(description='LINC Detector Prediction')
+    parser.add_argument('input_image_path', help='Path of image to run prediction on')
+    parser.add_argument('model_checkpoint_path', help='Path of checkpoint of model to load into network')
+    parser.add_argument(
+        '--output_image_path', default='out.jpg', help='Path where output image should be saved'
+    )
+    parser.add_argument("--cpu", dest="cpu", help="Force model to use CPU", action="store_true")
+    args = parser.parse_args()
+
+    main(args.input_image_path, args.model_checkpoint_path, args.output_image_path, args.cpu)

@@ -189,7 +189,7 @@ def main(args):
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description='PyTorch Detection Training')
+    parser = argparse.ArgumentParser(description='LINC Detector Training')
 
     parser.add_argument('--data-path', default='/mnt/hdd1/lalo/coco_easy', help='dataset')
     parser.add_argument('--model', default='fasterrcnn_resnet50_fpn', help='model')

@@ -3,6 +3,6 @@ __pycache__/
 runs/
 old_runs/
 sample_pictures/
-prediction_outputs/
+out.jpg
 .ipynb_checkpoints/
 datasets
