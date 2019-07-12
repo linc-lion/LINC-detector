@@ -29,7 +29,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, wr
             # Write input image and target to summary. The model modifies its input images in place it
             # seems (normalization), so we save them before running them through model
             image_with_boxes = utils.draw_boxes(
-                images[0], targets[0]['boxes'], targets[0]['labels'], label_names
+                images[0], targets[0]['boxes'], targets[0]['labels'], label_names, vert_size=300
             )
             writer.add_image('Target image', image_with_boxes, global_step=epoch)
             first_step_of_epoch = False
