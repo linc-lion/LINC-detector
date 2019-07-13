@@ -1,8 +1,9 @@
 import datetime
 import os
 import time
-import sys
+import shutil
 import subprocess
+import sys
 
 import torch
 import torch.utils.data
@@ -31,58 +32,16 @@ def get_transform(train):
 
 
 def main(args):
-    utils.init_distributed_mode(args)
-    print(args)
-
-    device = torch.device(args.device)
-
-    # Data loading code
-    print("Loading data")
-    dataset, num_classes, label_names = get_coco(
-        args.data_path, image_set='train', transforms=get_transform(train=True)
-    )
-    print(f"Categorizing into {num_classes} classes")
-    if args.overfit:
-        dataset_test, _, _ = get_coco(
-            args.data_path, image_set='train', transforms=get_transform(train=False),
-        )
-        print("Overfitting to train dataset! Only for debugging")
-        assert len(dataset) == len(dataset_test)
-    else:
-        dataset_test, _, _ = get_coco(
-            args.data_path, image_set='val', transforms=get_transform(train=False)
-        )
-
-    print("Creating data loaders")
-    if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
-        test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test)
-    else:
-        train_sampler = torch.utils.data.RandomSampler(dataset)
-        test_sampler = torch.utils.data.SequentialSampler(dataset_test)
-
-    if args.aspect_ratio_group_factor >= 0:
-        group_ids = create_aspect_ratio_groups(dataset, k=args.aspect_ratio_group_factor)
-        train_batch_sampler = GroupedBatchSampler(train_sampler, group_ids, args.batch_size)
-    else:
-        train_batch_sampler = torch.utils.data.BatchSampler(
-            train_sampler, args.batch_size, drop_last=True)
-
-    data_loader = torch.utils.data.DataLoader(
-        dataset, batch_sampler=train_batch_sampler, num_workers=args.workers,
-        collate_fn=utils.collate_fn)
-
-    data_loader_test = torch.utils.data.DataLoader(
-        dataset_test, batch_size=1,
-        sampler=test_sampler, num_workers=args.workers,
-        collate_fn=utils.collate_fn)
-
     # Create summary writer for Tensorboard
     if args.run_name:
         log_dir_path = f"runs/{args.run_name}" if args.run_name else None
         if os.path.isdir(log_dir_path):
-            print(f"\nError, summary folder 'runs/{args.run_name}' already exists! Chose another name")
-            exit()
+            delete = input(f"Summary folder '{log_dir_path}' already exists. Overwrite it [yes, y / no, n]?")
+            if delete in ('yes', 'y'):
+                shutil.rmtree(log_dir_path)
+            else:
+                print(f"Chose another run name or delete the folder then!")
+                exit()
     else:
         log_dir_path = None
     writer = SummaryWriter(log_dir=log_dir_path)
@@ -108,7 +67,49 @@ def main(args):
     except (FileNotFoundError, subprocess.CalledProcessError):
         print("\nGit not installed or not running from a repo, summary won't have git data!\n")
 
-    print("Creating model")
+    utils.init_distributed_mode(args)
+
+    device = torch.device(args.device)
+
+    # Data loading code
+    dataset, num_classes, label_names = get_coco(
+        args.data_path, image_set='train', transforms=get_transform(train=True)
+    )
+    print(f"Categorizing into {num_classes} classes")
+    if args.overfit:
+        dataset_test, _, _ = get_coco(
+            args.data_path, image_set='train', transforms=get_transform(train=False),
+        )
+        print("Overfitting to train dataset! Only for debugging")
+        assert len(dataset) == len(dataset_test)
+    else:
+        dataset_test, _, _ = get_coco(
+            args.data_path, image_set='val', transforms=get_transform(train=False)
+        )
+
+    if args.distributed:
+        train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
+        test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test)
+    else:
+        train_sampler = torch.utils.data.RandomSampler(dataset)
+        test_sampler = torch.utils.data.SequentialSampler(dataset_test)
+
+    if args.aspect_ratio_group_factor >= 0:
+        group_ids = create_aspect_ratio_groups(dataset, k=args.aspect_ratio_group_factor)
+        train_batch_sampler = GroupedBatchSampler(train_sampler, group_ids, args.batch_size)
+    else:
+        train_batch_sampler = torch.utils.data.BatchSampler(
+            train_sampler, args.batch_size, drop_last=True)
+
+    data_loader = torch.utils.data.DataLoader(
+        dataset, batch_sampler=train_batch_sampler, num_workers=args.workers,
+        collate_fn=utils.collate_fn)
+
+    data_loader_test = torch.utils.data.DataLoader(
+        dataset_test, batch_size=1,
+        sampler=test_sampler, num_workers=args.workers,
+        collate_fn=utils.collate_fn)
+
     model = torchvision.models.detection.__dict__[args.model](num_classes=num_classes,
                                                               pretrained=args.pretrained)
     model.to(device)
@@ -122,9 +123,6 @@ def main(args):
     optimizer = torch.optim.SGD(
         params, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
-    # lr_scheduler = torch.optim.lr_scheduler.StepLR(
-    #     optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma
-    # )
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
         optimizer, milestones=args.lr_steps, gamma=args.lr_gamma
     )
@@ -205,7 +203,6 @@ if __name__ == "__main__":
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
-    parser.add_argument('--lr-step-size', default=8, type=int, help='decrease lr every step-size epochs')  # noqa
     parser.add_argument('--lr-steps', default=[10, 11], nargs='+', type=int, help='decrease lr every step-size epochs')  # noqa
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')  # noqa
     parser.add_argument('--print-freq', default=20, type=int, help='print frequency')
