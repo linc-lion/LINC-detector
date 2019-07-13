@@ -323,7 +323,7 @@ def draw_boxes(image, boxes, labels, label_names, scores=None, vert_size=None, l
         image = torch.nn.functional.interpolate(
             image[None], scale_factor=scale_factor, mode='bilinear', align_corners=False)[0]
         boxes = boxes * scale_factor
-    text_labels = label_names[labels - 1]
+    text_labels = label_names[labels - 1] if len(labels) > 1 else [label_names[labels - 1]]
     pil_image = convert_to_pil(image)
     draw = ImageDraw.Draw(pil_image)
     for i, (box, label) in enumerate(zip(boxes, text_labels)):
