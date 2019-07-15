@@ -323,12 +323,17 @@ def draw_boxes(image, boxes, labels, label_names, scores=None, vert_size=None, l
         image = torch.nn.functional.interpolate(
             image[None], scale_factor=scale_factor, mode='bilinear', align_corners=False)[0]
         boxes = boxes * scale_factor
+
     text_labels = label_names[labels - 1] if len(labels) > 1 else [label_names[labels - 1]]
     pil_image = convert_to_pil(image)
     draw = ImageDraw.Draw(pil_image)
+    line_color = 'blue' if scores is None else 'red'
+    text_color = 'blue' if scores is None else 'white'
+    width = line_width if scores is None else max(int(line_width / 2), 1)
     for i, (box, label) in enumerate(zip(boxes, text_labels)):
-        draw.rectangle(((box[0], box[1]), (box[2], box[3])), outline='red', width=line_width)
+        draw.rectangle(((box[0], box[1]), (box[2], box[3])), outline=line_color, width=width)
         if draw_label:
             text = str(label) if scores is None else f"{label}|{scores[i]:.2f}"
-            draw.text((box[0], box[1]), str(text))
+            text_coord = (box[0], box[3]) if scores is None else (box[0], box[1])
+            draw.text(text_coord, str(text), fill=text_color)
     return convert_to_torch(pil_image)

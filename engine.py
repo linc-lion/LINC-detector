@@ -113,6 +113,7 @@ def evaluate(model, data_loader, epoch, writer, draw_threshold, label_names, num
         metric_logger.update(model_time=model_time, evaluator_time=evaluator_time)
 
         # Write evaluated images to summary
+        vert_size = 300
         if images_evaluated % int(round(len(data_loader) / num_draw_predictions)) == 0:
             scores = outputs[0]['scores']
             top_scores_filter = scores > draw_threshold
@@ -120,9 +121,21 @@ def evaluate(model, data_loader, epoch, writer, draw_threshold, label_names, num
             top_boxes = outputs[0]['boxes'][top_scores_filter]
             top_labels = outputs[0]['labels'][top_scores_filter]
             if len(top_scores) > 0:
+                # Draw targets. Convert targets to cpu for drawing first.
+                targets = [{k: v.to('cpu') for k, v in t.items()} for t in targets]
                 image_with_boxes = utils.draw_boxes(
-                    pre_model_image, top_boxes, top_labels, label_names, scores
+                    pre_model_image, targets[0]['boxes'], targets[0]['labels'], label_names,
+                    vert_size=vert_size,
                 )
+
+                # Image was scaled in previos step, but predictions still need to be scaled
+                scaled_top_boxes = top_boxes * (1 / (pre_model_image.shape[1] / vert_size))
+
+                # Draw predictions
+                image_with_boxes = utils.draw_boxes(
+                    image_with_boxes, scaled_top_boxes, top_labels, label_names, scores, vert_size=vert_size,
+                )
+
                 writer.add_image(
                     f'Eval image {images_written_to_summary}', image_with_boxes, global_step=epoch
                 )

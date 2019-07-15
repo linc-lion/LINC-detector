@@ -49,7 +49,7 @@ def main(image_path, model_path, output_path, cpu):
     top_labels = outputs[0]['labels'][top_scores_filter]
     if len(top_scores) > 0:
         image_with_boxes = draw_boxes(
-            image.cpu(), top_boxes, top_labels.cpu(), label_names, scores
+            image.cpu(), top_boxes, top_labels.cpu(), label_names, scores, vert_size=500
         )
     else:
         print("The model didn't find any object it feels confident about enough to show")
