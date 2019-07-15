@@ -6,9 +6,13 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-torchvision = "*"
-opencv-python = "*"
+torchvision = "0.3.0"
 jupyter = "*"
+# Note:
+# 'tb-nightly' and 'future' are for running tensorboard in pytorch.
+# They are not supposed to be needed as pytorch has tensorboard integrated
+# into the library. Nevertheless, this addition to pytorch is really new, and
+# it seems they haven't ironed out small some dependency issues!
 tb-nightly = "*"
 future = "*"
 
