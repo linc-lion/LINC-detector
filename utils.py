@@ -316,7 +316,8 @@ convert_to_pil = torchvision.transforms.ToPILImage()
 convert_to_torch = torchvision.transforms.ToTensor()
 
 
-def draw_boxes(image, boxes, labels, label_names, scores=None, vert_size=None, line_width=4, draw_label=True):
+def draw_boxes(image, boxes, labels, label_names, scores=None, vert_size=None, line_width=4,
+               draw_label=True, image_id=None):
     image = image.cpu()
     if vert_size:
         scale_factor = 1 / (image.shape[1] / vert_size)
@@ -334,6 +335,8 @@ def draw_boxes(image, boxes, labels, label_names, scores=None, vert_size=None, l
         draw.rectangle(((box[0], box[1]), (box[2], box[3])), outline=line_color, width=width)
         if draw_label:
             text = str(label) if scores is None else f"{label}|{scores[i]:.2f}"
-            text_coord = (box[0], box[3]) if scores is None else (box[0], box[1])
+            text_coord = (box[0] + 5, box[3] - 15) if scores is None else (box[0], box[1])
             draw.text(text_coord, str(text), fill=text_color)
+        if image_id is not None:
+            draw.text((int(image.shape[2] / 2), 0), f"Image_id: {image_id}", fill='white')
     return convert_to_torch(pil_image)

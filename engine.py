@@ -29,7 +29,8 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, wr
             # Write input image and target to summary. The model modifies its input images in place it
             # seems (normalization), so we save them before running them through model
             image_with_boxes = utils.draw_boxes(
-                images[0], targets[0]['boxes'], targets[0]['labels'], label_names, vert_size=300
+                images[0], targets[0]['boxes'], targets[0]['labels'], label_names, vert_size=300,
+                image_id=int(targets[0]['image_id']),
             )
             writer.add_image('Target image', image_with_boxes, global_step=epoch)
             first_step_of_epoch = False
@@ -113,7 +114,7 @@ def evaluate(model, data_loader, epoch, writer, draw_threshold, label_names, num
         metric_logger.update(model_time=model_time, evaluator_time=evaluator_time)
 
         # Write evaluated images to summary
-        vert_size = 300
+        vert_size = 400
         if images_evaluated % int(round(len(data_loader) / num_draw_predictions)) == 0:
             scores = outputs[0]['scores']
             top_scores_filter = scores > draw_threshold
@@ -125,7 +126,7 @@ def evaluate(model, data_loader, epoch, writer, draw_threshold, label_names, num
                 targets = [{k: v.to('cpu') for k, v in t.items()} for t in targets]
                 image_with_boxes = utils.draw_boxes(
                     pre_model_image, targets[0]['boxes'], targets[0]['labels'], label_names,
-                    vert_size=vert_size,
+                    vert_size=vert_size
                 )
 
                 # Image was scaled in previos step, but predictions still need to be scaled
@@ -134,6 +135,7 @@ def evaluate(model, data_loader, epoch, writer, draw_threshold, label_names, num
                 # Draw predictions
                 image_with_boxes = utils.draw_boxes(
                     image_with_boxes, scaled_top_boxes, top_labels, label_names, scores, vert_size=vert_size,
+                    image_id=int(targets[0]['image_id'])
                 )
 
                 writer.add_image(
