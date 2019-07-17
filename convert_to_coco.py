@@ -178,13 +178,16 @@ class LINCDatasetConverter():
                     annotation_dict = coco_val if dataset == 'val' else coco_train
 
                     # Process objects
+                    image_has_relevant_objects = False
                     for o in objects:
                         target = self.get_obj_annotation(o)
                         if target:
                             annotation_dict['annotations'].append(target)
                             self.obj_counter += 1
-                        else:
-                            continue
+                            image_has_relevant_objects = True
+                    # Skip pictures that don't have the objects we are looking for
+                    if not image_has_relevant_objects:
+                        continue
 
                     # Load image
                     input_image_path = os.path.join(root, data['annotation']['filename'])
@@ -214,8 +217,8 @@ class LINCDatasetConverter():
                         return
 
         # Print results
-        print("Results:")
         print(f" Done!\n")
+        print("Results:")
         print(f"Looked at {xml_files} xml files.")
         print(
             f"Saved {self.img_counter} images with annotations, "
