@@ -338,5 +338,5 @@ def draw_boxes(image, boxes, labels, label_names, scores=None, vert_size=None, l
             text_coord = (box[0] + 5, box[3] - 15) if scores is None else (box[0], box[1])
             draw.text(text_coord, str(text), fill=text_color)
         if image_id is not None:
-            draw.text((int(image.shape[2] / 2), 0), f"Image_id: {image_id}", fill='white')
+            draw.text((int(image.shape[2] / 2), image.shape[1] - 15), f"Image_id: {image_id}", fill='white')
     return convert_to_torch(pil_image)

@@ -220,18 +220,20 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         return img, target
 
 
-def get_coco(root, image_set, transforms, mode='instances'):
+def get_transform(train, labels):
+    transforms = []
+    transforms.append(T.ToTensor())
+    if train:
+        transforms.append(T.RandomHorizontalFlip(0.5, labels))
+    return T.Compose(transforms)
+
+
+def get_coco(root, image_set, mode='instances'):
     PATHS = {
         "train": ("train", "train.json"),
         "val": ("val", "val.json"),
         # "train": ("val2017", os.path.join("annotations", anno_file_template.format(mode, "val")))
     }
-
-    t = [ConvertCocoPolysToMask()]
-
-    if transforms is not None:
-        t.append(transforms)
-    transforms = T.Compose(t)
 
     img_folder, ann_file = PATHS[image_set]
     img_folder = os.path.join(root, img_folder)
@@ -240,6 +242,12 @@ def get_coco(root, image_set, transforms, mode='instances'):
 
     labels = np.array(json.load(open(labels_file, 'r')))
     num_classes = len(labels) + 1  # Add 1 for the background class
+
+    transforms = get_transform(image_set == 'train', labels)
+    t = [ConvertCocoPolysToMask()]
+    if transforms is not None:
+        t.append(transforms)
+    transforms = T.Compose(t)
 
     dataset = CocoDetection(img_folder, ann_file, transforms=transforms)
 

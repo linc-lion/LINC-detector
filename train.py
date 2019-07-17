@@ -12,23 +12,12 @@ import torchvision.models.detection
 import torchvision.models.detection.mask_rcnn
 from torch.utils.tensorboard import SummaryWriter
 
-from torchvision import transforms
-
 from coco_utils import get_coco  # get_coco_kp
 
 from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
 from engine import train_one_epoch, evaluate
 
 import utils
-import transforms as T
-
-
-def get_transform(train):
-    transforms = []
-    transforms.append(T.ToTensor())
-    if train:
-        transforms.append(T.RandomHorizontalFlip(0.5))
-    return T.Compose(transforms)
 
 
 def main(args):
@@ -72,20 +61,14 @@ def main(args):
     device = torch.device(args.device)
 
     # Data loading code
-    dataset, num_classes, label_names = get_coco(
-        args.data_path, image_set='train', transforms=get_transform(train=True)
-    )
+    dataset, num_classes, label_names = get_coco(args.data_path, image_set='train')
     print(f"Categorizing into {num_classes} classes")
     if args.overfit:
-        dataset_test, _, _ = get_coco(
-            args.data_path, image_set='train', transforms=get_transform(train=False),
-        )
+        dataset_test, _, _ = get_coco(args.data_path, image_set='train')
         print("Overfitting to train dataset! Only for debugging")
         assert len(dataset) == len(dataset_test)
     else:
-        dataset_test, _, _ = get_coco(
-            args.data_path, image_set='val', transforms=get_transform(train=False)
-        )
+        dataset_test, _, _ = get_coco(args.data_path, image_set='val')
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
