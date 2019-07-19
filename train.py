@@ -7,9 +7,7 @@ import sys
 
 import torch
 import torch.utils.data
-import torchvision
-import torchvision.models.detection
-import torchvision.models.detection.mask_rcnn
+from models import detection
 from torch.utils.tensorboard import SummaryWriter
 
 from coco_utils import get_coco  # get_coco_kp
@@ -93,8 +91,7 @@ def main(args):
         sampler=test_sampler, num_workers=args.workers,
         collate_fn=utils.collate_fn)
 
-    model = torchvision.models.detection.__dict__[args.model](num_classes=num_classes,
-                                                              pretrained=args.pretrained)
+    model = detection.__dict__[args.model](num_classes=num_classes, pretrained=args.pretrained)
     model.to(device)
 
     model_without_ddp = model
@@ -159,7 +156,7 @@ def main(args):
         'lr_scheduler': lr_scheduler.state_dict(),
         'args': args,
         'label_names': label_names},
-        os.path.join(writer.log_dir, 'model_{}_finished.pth'.format(epoch))
+        os.path.join(writer.log_dir, 'model_finished.pth')
     )
 
     writer.close()
