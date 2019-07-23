@@ -1,37 +1,37 @@
 from convert_to_coco import LINCDatasetConverter
 
 category_grouping_dict = {
-    "cv-dl": set(["cv-dl"]),
-    "cv-dr": set(["cv-dr"]),
-    "cv-f": set(["cv-f"]),
-    "cv-sl": set(["cv-sl"]),
-    "cv-sr": set(["cv-sr"]),
-    "ear-dl-l": set(["ear-dl-l"]),
-    "ear-dl-r": set(["ear-dl-r"]),
-    "ear-dr-l": set(["ear-dr-l"]),
-    "ear-dr-r": set(["ear-dr-r"]),
-    "ear-fl": set(["ear-fl"]),
-    "ear-fr": set(["ear-fr"]),
-    "ear-sl": set(["ear-sl"]),
-    "ear-sr": set(["ear-sr"]),
-    "eye-dl-l": set(["eye-dl-l"]),
-    "eye-dl-r": set(["eye-dl-r"]),
-    "eye-dr-l": set(["eye-dr-l"]),
-    "eye-dr-r": set(["eye-dr-r"]),
-    "eye-fl": set(["eye-fl"]),
-    "eye-fr": set(["eye-fr"]),
-    "eye-sl": set(["eye-sl"]),
-    "eye-sr": set(["eye-sr"]),
-    "nose-dl": set(["nose-dl"]),
-    "nose-dr": set(["nose-dr"]),
-    "nose-f": set(["nose-f"]),
-    "nose-sl": set(["nose-sl"]),
-    "nose-sr": set(["nose-sr"]),
-    "whisker-dl": set(["whisker-dl"]),
-    "whisker-dr": set(["whisker-dr"]),
-    "whisker-f": set(["whisker-f"]),
-    "whisker-sl": set(["whisker-sl"]),
-    "whisker-sr": set(["whisker-sr"]),
+    "cv-dl": set(["cv-dl"]),  # 1
+    "cv-dr": set(["cv-dr"]),  # 2
+    "cv-f": set(["cv-f"]),  # 3
+    "cv-sl": set(["cv-sl"]),  # 4
+    "cv-sr": set(["cv-sr"]),  # 5
+    "ear-dl-l": set(["ear-dl-l"]),  # 6
+    "ear-dl-r": set(["ear-dl-r"]),  # 7
+    "ear-dr-l": set(["ear-dr-l"]),  # 8
+    "ear-dr-r": set(["ear-dr-r"]),  # 9
+    "ear-fl": set(["ear-fl"]),  # 10
+    "ear-fr": set(["ear-fr"]),  # 11
+    "ear-sl": set(["ear-sl"]),  # 12
+    "ear-sr": set(["ear-sr"]),  # 13
+    "eye-dl-l": set(["eye-dl-l"]),  # 14
+    "eye-dl-r": set(["eye-dl-r"]),  # 15
+    "eye-dr-l": set(["eye-dr-l"]),  # 16
+    "eye-dr-r": set(["eye-dr-r"]),  # 17
+    "eye-fl": set(["eye-fl"]),  # 18
+    "eye-fr": set(["eye-fr"]),  # 19
+    "eye-sl": set(["eye-sl"]),  # 20
+    "eye-sr": set(["eye-sr"]),  # 21
+    "nose-dl": set(["nose-dl"]),  # 22
+    "nose-dr": set(["nose-dr"]),  # 23
+    "nose-f": set(["nose-f"]),  # 24
+    "nose-sl": set(["nose-sl"]),  # 25
+    "nose-sr": set(["nose-sr"]),  # 26
+    "whisker-dl": set(["whisker-dl"]),  # 27
+    "whisker-dr": set(["whisker-dr"]),  # 28
+    "whisker-f": set(["whisker-f"]),  # 29
+    "whisker-sl": set(["whisker-sl"]),  # 30
+    "whisker-sr": set(["whisker-sr"]),  # 31
 }
 
 
