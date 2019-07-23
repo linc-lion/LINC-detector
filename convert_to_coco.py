@@ -145,7 +145,7 @@ class LINCDatasetConverter():
         # Create output directories
         if os.path.isdir(self.args.output_path):
             shutil.rmtree(self.args.output_path)
-            print(f'Deleted {self.args.output_path} folder in order to use it as output.')
+            print(f"Deleted '{self.args.output_path}' folder in order to use it as output!\n")
         mkdir(self.args.output_path)
         mkdir(os.path.join(self.args.output_path, 'train'))
         mkdir(os.path.join(self.args.output_path, 'val'))
