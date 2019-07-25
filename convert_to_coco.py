@@ -70,7 +70,7 @@ coco_val = {
 
 class LINCDatasetConverter():
 
-    def __init__(self, category_grouping_dict, ignore_picture_fn=None):
+    def __init__(self, category_grouping_dict, ignore_picture_fn=None, crop_ws_area=False):
         # Determines what the dataset structure will be
         self.category_grouping_dict = category_grouping_dict
         self.category_labels = [l for l in self.category_grouping_dict.keys()]
@@ -80,6 +80,8 @@ class LINCDatasetConverter():
             self.ignore_picture = ignore_picture_fn
         else:
             self.ignore_picture = lambda x: False
+
+        self.crop_ws_area = crop_ws_area
 
     def category_group(self, category):
         for key, value in self.category_grouping_dict.items():
@@ -113,10 +115,9 @@ class LINCDatasetConverter():
         return annotation
 
     def get_img_annotation(self, image_name, img):
-        output = {
+        return {
             'id': self.img_counter, 'file_name': image_name, 'height': img.size[1], 'width': img.size[0]
         }
-        return output
 
     def parse_voc_xml(self, node):
         voc_dict = {}
@@ -178,15 +179,15 @@ class LINCDatasetConverter():
                     annotation_dict = coco_val if dataset == 'val' else coco_train
 
                     # Process objects
-                    image_has_relevant_objects = False
+                    relevant_objects = []
                     for o in objects:
                         target = self.get_obj_annotation(o)
                         if target:
-                            annotation_dict['annotations'].append(target)
+                            relevant_objects.append(target)
                             self.obj_counter += 1
-                            image_has_relevant_objects = True
+
                     # Skip pictures that don't have the objects we are looking for
-                    if not image_has_relevant_objects:
+                    if len(relevant_objects) == 0:
                         continue
 
                     # Load image
@@ -194,9 +195,40 @@ class LINCDatasetConverter():
                     image_name = os.path.basename(input_image_path)
                     pil_image = Image.open(input_image_path)
 
-                    # Process image
+                    # Possibly crop image to just the whisker area
+                    if self.crop_ws_area:
+                        # Find whisker spot real area ('whisker area' annotation is not always present!)
+                        min_ws_x, min_ws_y, max_ws_x, max_ws_y = pil_image.size[0], pil_image.size[1], 0, 0
+                        for o in objects:
+                            if o['name'] == 'ws':
+                                min_ws_x = min_ws_x if min_ws_x < int(o['bndbox']['xmin']) else int(o['bndbox']['xmin'])  # noqa
+                                min_ws_y = min_ws_y if min_ws_y < int(o['bndbox']['ymin']) else int(o['bndbox']['ymin'])  # noqa
+                                max_ws_x = max_ws_x if max_ws_x > int(o['bndbox']['xmax']) else int(o['bndbox']['xmax'])  # noqa
+                                max_ws_y = max_ws_y if max_ws_y > int(o['bndbox']['ymax']) else int(o['bndbox']['ymax'])  # noqa
+
+                        # Find crop area
+                        ws_area_height = max_ws_y - min_ws_y
+                        ws_area_width = max_ws_x - min_ws_x
+                        margin_factor = 0.5
+                        crop_x_min = max(min_ws_x - margin_factor * ws_area_width, 0)
+                        crop_y_min = max(min_ws_y - margin_factor * ws_area_height, 0)
+                        crop_x_max = min(max_ws_x + margin_factor * ws_area_width, pil_image.size[0])
+                        crop_y_max = min(max_ws_y + margin_factor * ws_area_height, pil_image.size[1])
+
+                        # Crop picture
+                        pil_image = pil_image.crop((crop_x_min, crop_y_min, crop_x_max, crop_y_max))
+
+                        # Shift objects coordinates to new cropped picture coordinates
+                        for o in relevant_objects:
+                            o['bbox'][0] -= crop_x_min
+                            o['bbox'][1] -= crop_y_min
+
+                    # Save image
                     pil_image.save(os.path.join(self.args.output_path, dataset, image_name))
                     annotation_dict['images'].append(self.get_img_annotation(image_name, pil_image))
+
+                    # Save objects
+                    annotation_dict['annotations'].extend(relevant_objects)
 
                     self.img_counter += 1
                     print('.', flush=True, end='')
