@@ -35,6 +35,14 @@ category_grouping_dict = {
 }
 
 
-dataset_creator = LINCDatasetConverter(category_grouping_dict)
+# Ignore pictures with any whisker spot annotation
+def ignore_picture_if(objects):
+    for o in objects:
+        if o['name'] == 'ws':
+            return True
+    return False
+
+
+dataset_creator = LINCDatasetConverter(category_grouping_dict, ignore_picture_fn=ignore_picture_if)
 dataset_creator.parse_arguments()
 dataset_creator.create_coco_dataset()
