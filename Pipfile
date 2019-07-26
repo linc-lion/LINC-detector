@@ -6,7 +6,7 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-torchvision = "0.3.0"
+torchvision = "==0.3.0"
 jupyter = "*"
 # Note:
 # 'tb-nightly' and 'future' are for running tensorboard in pytorch.
