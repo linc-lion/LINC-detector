@@ -1,8 +1,8 @@
-import sys
 import time
 import torch
 from PIL import Image
 import torchvision
+from models import detection
 from utils import draw_boxes
 
 draw_confidence_threshold = 0.5
@@ -26,7 +26,7 @@ def main(image_path, model_path, output_path, cpu):
     print('Done.')
 
     print('Building model and loading checkpoint into it... ', end='', flush=True)
-    model = torchvision.models.detection.fasterrcnn_resnet50_fpn(
+    model = detection.fasterrcnn_resnet50_fpn(
         num_classes=len(label_names) + 1, pretrained_backbone=False
     )
     model.to(device)
