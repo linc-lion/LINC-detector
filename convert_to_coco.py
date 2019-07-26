@@ -192,7 +192,8 @@ class LINCDatasetConverter():
 
                     # Load image
                     input_image_path = os.path.join(root, data['annotation']['filename'])
-                    image_name = os.path.basename(input_image_path)
+                    # We need to differentiate image names, as some have the same name
+                    image_name = f"id_{self.img_counter}__{os.path.basename(input_image_path)}"
                     pil_image = Image.open(input_image_path)
 
                     # Possibly crop image to just the whisker area
