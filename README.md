@@ -1,3 +1,5 @@
+![logo](http://linclion.com/linc/wp-content/uploads/2015/06/lincLogo1200-e1525280990866.png)
+
 # LINC Object Detector
 
 This is README is functioning as a rough doc for the moment. Will be rewritten before project completion.
