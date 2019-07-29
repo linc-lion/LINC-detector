@@ -2,11 +2,15 @@
 
 # LINC Object Detector
 
-This is README is functioning as a rough doc for the moment. Will be rewritten before project completion.
+This project intends to help the LINC project in the process of identifying lions by using their pictures. In particular, the purpose of this project is to locate certain lion body parts and their pose with regards to the camera.
 
-## Requirements
-Python 3.6 or newer.
-Look in Pipfile for more detailed requirements
+## Installation
+Python 3.6 or newer is needed.
+```bash
+pip install -r requirements.txt  # If you don't like Pipenv
+pipenv install  # If you like Pipenv
+```
+Only hard requirement is torchvision==0.3.0, the other 3 requirements are just for visualizations really.
 
 ## Notes
 - Saved some checkpoints in the 'Releases' part of the repo, in pytorch checkpoints are `*.pth` files.
