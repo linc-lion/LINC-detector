@@ -13,32 +13,32 @@ CLASS_MERGER = torch.LongTensor([
     1,  # cv-sl
     1,  # cv-sr
     2,  # ear-dl-l
-    3,  # ear-dl-r
+    2,  # ear-dl-r
     2,  # ear-dr-l
-    3,  # ear-dr-r
+    2,  # ear-dr-r
     2,  # ear-fl
-    3,  # ear-fr
+    2,  # ear-fr
     2,  # ear-sl
-    3,  # ear-sr
-    4,  # eye-dl-l
-    5,  # eye-dl-r
-    4,  # eye-dr-l
-    5,  # eye-dr-r
-    4,  # eye-fl
-    5,  # eye-fr
-    4,  # eye-sl
-    5,  # eye-sr
-    6,  # nose-dl
-    6,  # nose-dr
-    6,  # nose-f
-    6,  # nose-sl
-    6,  # nose-sr
-    7,  # whisker-dl
-    7,  # whisker-dr
-    7,  # whisker-f
-    7,  # whisker-sl
-    7,  # whisker-sr
-    8   # ws
+    2,  # ear-sr
+    3,  # eye-dl-l
+    3,  # eye-dl-r
+    3,  # eye-dr-l
+    3,  # eye-dr-r
+    3,  # eye-fl
+    3,  # eye-fr
+    3,  # eye-sl
+    3,  # eye-sr
+    4,  # nose-dl
+    4,  # nose-dr
+    4,  # nose-f
+    4,  # nose-sl
+    4,  # nose-sr
+    5,  # whisker-dl
+    5,  # whisker-dr
+    5,  # whisker-f
+    5,  # whisker-sl
+    5,  # whisker-sr
+    6   # ws
 ])
 
 
