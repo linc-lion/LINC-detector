@@ -1,4 +1,4 @@
-datasets/
+data
 __pycache__/
 runs/
 old_runs/

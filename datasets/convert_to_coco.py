@@ -1,11 +1,13 @@
 import os
+import sys
 import xml.etree.ElementTree as ET
 import collections
 import json
 import shutil
 
 from PIL import Image
-from utils import mkdir
+sys.path.insert(0, os.getcwd())
+from utils import mkdir  # noqa
 
 
 train_val_ratio = 5

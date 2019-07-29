@@ -1,4 +1,7 @@
-from convert_to_coco import LINCDatasetConverter
+import os
+import sys
+sys.path.insert(0, os.getcwd())
+from datasets.convert_to_coco import LINCDatasetConverter  # noqa
 
 category_grouping_dict = {
     "ws": set(["ws"]),
