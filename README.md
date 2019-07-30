@@ -6,11 +6,21 @@ This project intends to help the LINC project in the process of identifying lion
 
 ## Installation
 Python 3.6 or newer is needed.
+
+First run:
 ```bash
-pip install -r requirements.txt  # If you don't like Pipenv
-pipenv install  # If you like Pipenv
+pip install -r requirements.txt
 ```
-Only hard requirement is torchvision==0.3.0, the other 3 requirements are just for visualizations really.
+
+Then, if you intend to do training, the package `pycocotools` is needed for running the evaluation scripts while training. Instructions are as follows:
+```bash
+pip install cython
+git clone https://github.com/cocodataset/cocoapi.git
+cd cocoapi/PythonAPI
+python setup.py build_ext install
+```
+
+NOTE: For inference the only necessary requirement is torchvision==0.3.0, the other 3 requirements and `pycocotools` are just for visualizations and eval during training.
 
 ## Notes
 - Saved some checkpoints in the 'Releases' part of the repo, in pytorch checkpoints are `*.pth` files.
