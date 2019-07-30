@@ -4,7 +4,7 @@
 
 This project intends to help LINC in the process of identifying lions by processing their pictures through software. In particular, the purpose of this project is to act as a preprocessor, and extract usefull parts of the input picture to be used as features for the lion identifying models.
 
-Built using pytorch and based on torchvision's models.
+Built using pytorch and based on torchvision's reference models.
 
 ## Installation
 Python 3.6 or newer is needed.
