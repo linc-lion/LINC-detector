@@ -20,6 +20,7 @@ pip install cython
 git clone https://github.com/cocodataset/cocoapi.git
 cd cocoapi/PythonAPI
 python setup.py build_ext install
+cd -
 ```
 
 NOTE: For inference the only necessary requirement is torchvision==0.3.0, the other requirements and `pycocotools` are just for visualizations and eval during training.
