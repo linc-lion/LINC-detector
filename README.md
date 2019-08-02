@@ -41,4 +41,4 @@ Run `python predict.py --help` for inference. There is one [whisker spot checkpo
 The code for creating the dataset for training the body parts checkpoint is [here](https://github.com/tryolabs/LINC/blob/master/datasets/create_all_but_ws_and_fb_dataset.py) and contains the mapping between label number and index for each class. On the whiskers checkpoint label index 1 corresponds to whisker spot, and 0 to background.
 
 ### Notebooks
-There are several jupyter notebooks in the `notebooks/` directory which are useful for data exploration, and model evaluation results exploration.
+There are several jupyter notebooks in the `notebooks/` directory which are useful for data exploration, and model evaluation results exploration. There is also a demo notebook for running an inference step chaining both models.
