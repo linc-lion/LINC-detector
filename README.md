@@ -39,7 +39,7 @@ In particular, there are several scripts in the `datasets/` directory for conver
 Run `python train.py --help` for training. While training, very useful Tensorboard summaries are saved in the `runs` folder by default. Just run `tensorboard --logdir runs` to see the progress of your training jobs.
 
 ### Inference
-Run `python predict.py --help` for inference. There is one [whisker spot checkpoint](https://github.com/tryolabs/LINC/releases/download/v0.0.2/whiskers.pth)(should have as an input pictures of the whisker area of the lion) and one [body parts checkpoint](https://github.com/tryolabs/LINC/releases/download/v0.0.2/body_parts.pth) (should have as an input any picture of a lion) in the [releases](https://github.com/tryolabs/LINC/releases) page of the repo.
+Run `python predict.py --help` for inference. There is one [whisker spot checkpoint](https://github.com/tryolabs/LINC/releases/download/v1.0/whiskers.pth)(should have as an input pictures of the whisker area of the lion) and one [body parts checkpoint](https://github.com/tryolabs/LINC/releases/download/v1.0/body_parts.pth) (should have as an input any picture of a lion) in the [releases](https://github.com/tryolabs/LINC/releases) page of the repo.
 
 The code used in creating the dataset that was used for training the body parts checkpoint is [here](https://github.com/tryolabs/LINC/blob/master/datasets/create_all_but_ws_and_fb_dataset.py) and it contains the mapping between label number and name for each class. On the whiskers checkpoint label number 1 corresponds to whisker spot, and 0 to background.
 
