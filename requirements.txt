@@ -1,5 +1,5 @@
 tb-nightly==1.15.0a20190731
-numpy==1.16.4
+numpy==1.17
 jupyter==1.0.0
 torchvision==0.3.0
 future==0.17.1

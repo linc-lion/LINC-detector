@@ -3,7 +3,7 @@ import torch
 from PIL import Image
 import torchvision
 from models import detection
-from utils import draw_boxes
+from helper.utils import draw_boxes
 
 draw_confidence_threshold = 0.5
 

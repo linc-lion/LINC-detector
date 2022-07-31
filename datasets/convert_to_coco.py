@@ -7,7 +7,7 @@ import shutil
 
 from PIL import Image
 sys.path.insert(0, os.getcwd())
-from utils import mkdir  # noqa
+from helper.utils import mkdir  # noqa
 
 
 train_val_ratio = 5

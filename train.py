@@ -10,12 +10,12 @@ import torch.utils.data
 from models import detection
 from torch.utils.tensorboard import SummaryWriter
 
-from coco_utils import get_coco  # get_coco_kp
+from helper.coco_utils import get_coco  # get_coco_kp
 
-from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
-from engine import train_one_epoch, evaluate
+from helper.group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
+from helper.engine import train_one_epoch, evaluate
 
-import utils
+from helper import utils
 
 
 def main(args):
