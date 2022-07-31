@@ -2,8 +2,8 @@ import time
 import torch
 from PIL import Image
 import torchvision
-from models import detection
-from helper.utils import draw_boxes
+from linc.detector.models import detection
+from linc.detector.helper.utils import draw_boxes
 
 draw_confidence_threshold = 0.5
 
