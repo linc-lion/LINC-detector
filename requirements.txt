@@ -1,4 +1,4 @@
-tb-nightly==1.15.0a20190731
+tb-nightly==2.10.0a20220731
 numpy==1.21.6
 torchvision==0.5.0
 future==0.17.1
