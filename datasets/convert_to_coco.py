@@ -6,9 +6,9 @@ import json
 import shutil
 
 from PIL import Image
-sys.path.insert(0, os.getcwd())
-from linc.detector.helper import mkdir  # noqa
 
+sys.path.insert(0, os.getcwd())
+from linc.detector.helper.utils import mkdir  # noqa
 
 train_val_ratio = 5
 coco_train = {
@@ -142,23 +142,23 @@ class LINCDatasetConverter():
 
     def create_coco_dataset(self):
         # Check existence of root
-        if not os.path.isdir(self.args.input_path):
+        if not os.path.isdir(self.input_path):
             raise RuntimeError('Dataset not found.')
 
         # Create output directories
-        if os.path.isdir(self.args.output_path):
-            shutil.rmtree(self.args.output_path)
-            print(f"Deleted '{self.args.output_path}' folder in order to use it as output!\n")
-        mkdir(self.args.output_path)
-        mkdir(os.path.join(self.args.output_path, 'train'))
-        mkdir(os.path.join(self.args.output_path, 'val'))
+        if os.path.isdir(self.output_path):
+            shutil.rmtree(self.output_path)
+            print(f"Deleted '{self.output_path}' folder in order to use it as output!\n")
+        mkdir(self.output_path)
+        mkdir(os.path.join(self.output_path, 'train'))
+        mkdir(os.path.join(self.output_path, 'val'))
 
         # Crawl sub-directories
-        print(f"Parsing xml files in {self.args.input_path}", end='')
+        print(f"Parsing xml files in {self.input_path}", end='')
         self.obj_counter = 0
         self.img_counter = 0
         xml_files = 0
-        for root, dirs, files in os.walk(self.args.input_path):
+        for root, dirs, files in os.walk(self.input_path):
             dirs.sort()  # Lets make this deterministic so our ids are too.
             for file_name in [os.path.join(root, f) for f in files]:
                 if os.path.splitext(file_name)[1] == '.xml':
@@ -204,10 +204,14 @@ class LINCDatasetConverter():
                         min_ws_x, min_ws_y, max_ws_x, max_ws_y = pil_image.size[0], pil_image.size[1], 0, 0
                         for o in objects:
                             if o['name'] == 'ws':
-                                min_ws_x = min_ws_x if min_ws_x < int(o['bndbox']['xmin']) else int(o['bndbox']['xmin'])  # noqa
-                                min_ws_y = min_ws_y if min_ws_y < int(o['bndbox']['ymin']) else int(o['bndbox']['ymin'])  # noqa
-                                max_ws_x = max_ws_x if max_ws_x > int(o['bndbox']['xmax']) else int(o['bndbox']['xmax'])  # noqa
-                                max_ws_y = max_ws_y if max_ws_y > int(o['bndbox']['ymax']) else int(o['bndbox']['ymax'])  # noqa
+                                min_ws_x = min_ws_x if min_ws_x < int(o['bndbox']['xmin']) else int(
+                                    o['bndbox']['xmin'])  # noqa
+                                min_ws_y = min_ws_y if min_ws_y < int(o['bndbox']['ymin']) else int(
+                                    o['bndbox']['ymin'])  # noqa
+                                max_ws_x = max_ws_x if max_ws_x > int(o['bndbox']['xmax']) else int(
+                                    o['bndbox']['xmax'])  # noqa
+                                max_ws_y = max_ws_y if max_ws_y > int(o['bndbox']['ymax']) else int(
+                                    o['bndbox']['ymax'])  # noqa
 
                         # Find crop area
                         ws_area_height = max_ws_y - min_ws_y
@@ -227,7 +231,7 @@ class LINCDatasetConverter():
                             o['bbox'][1] -= crop_y_min
 
                     # Save image
-                    pil_image.save(os.path.join(self.args.output_path, dataset, image_name))
+                    pil_image.save(os.path.join(self.output_path, dataset, image_name))
                     annotation_dict['images'].append(self.get_img_annotation(image_name, pil_image))
 
                     # Save objects
@@ -237,18 +241,18 @@ class LINCDatasetConverter():
                     print('.', flush=True, end='')
 
                     # If trimming dataset: escape function when we have reached the max number of images
-                    if self.img_counter == self.args.trim_to:
+                    if self.img_counter == self.trim_to:
                         # Print results
                         print(f" Done!\n")
                         print("Results:")
-                        print(f"Created dataset trimmed dataset to just {self.args.trim_to} pictures.")
+                        print(f"Created dataset trimmed dataset to just {self.trim_to} pictures.")
                         print(f"Looked at {xml_files} xml files.")
                         print(
                             f"Saved {self.img_counter} images with annotations, "
                             f"{len(coco_train['images'])} to train set and "
                             f"{len(coco_val['images'])} to validation set."
                         )
-                        print(f"Dataset saved to '{self.args.output_path}'.")
+                        print(f"Dataset saved to '{self.output_path}'.")
                         return
 
         # Print results
@@ -260,22 +264,30 @@ class LINCDatasetConverter():
             f"{len(coco_train['images'])} to train set and "
             f"{len(coco_val['images'])} to validation set."
         )
-        print(f"Dataset saved to '{self.args.output_path}'.")
+        print(f"Dataset saved to '{self.output_path}'.")
 
         # Save annotations
-        with open(os.path.join(self.args.output_path, 'train.json'), 'w') as f:
+        with open(os.path.join(self.output_path, 'train.json'), 'w') as f:
             json.dump(coco_train, f)
-        with open(os.path.join(self.args.output_path, 'val.json'), 'w') as f:
+        with open(os.path.join(self.output_path, 'val.json'), 'w') as f:
             json.dump(coco_val, f)
-        with open(os.path.join(self.args.output_path, 'labels.json'), 'w') as f:
+        with open(os.path.join(self.output_path, 'labels.json'), 'w') as f:
             json.dump(self.category_labels, f)
 
-    def parse_arguments(self):
-        import argparse
-        parser = argparse.ArgumentParser(description='LINC Dataset Converter')
-        parser.add_argument('input_path', help='Path to input dataset folder')
-        parser.add_argument('-o', '--output-path', help='Path to output dataset folder')
-        parser.add_argument(
-            '--trim-to', default=0, type=int,
-            help='Create smaller dataset, useful for overfitting/debugging')
-        self.args = parser.parse_args()
+    def parse_arguments(self, **kwargs):
+        if not kwargs:
+            import argparse
+            parser = argparse.ArgumentParser(description='LINC Dataset Converter')
+            parser.add_argument('input_path', help='Path to input dataset folder')
+            parser.add_argument('-o', '--output-path', help='Path to output dataset folder')
+            parser.add_argument(
+                '--trim-to', default=0, type=int,
+                help='Create smaller dataset, useful for overfitting/debugging')
+            args = parser.parse_args()
+            self.output_path = args.output_path
+            self.input_path = args.input_path
+            self.trim_to = args.trim_to
+        else:
+            self.output_path = kwargs.get('output_path')
+            self.input_path = kwargs.get('input_path')
+            self.trim_to = kwargs.get('trim_to')
