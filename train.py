@@ -10,7 +10,7 @@ import torch.utils.data
 from linc.detector.models import detection
 from torch.utils.tensorboard import SummaryWriter
 
-from linc.detector.helper import get_coco  # get_coco_kp
+from linc.detector.helper.coco_utils import get_coco  # get_coco_kp
 
 from linc.detector.helper.group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
 from linc.detector.helper.engine import train_one_epoch, evaluate
