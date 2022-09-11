@@ -12,7 +12,7 @@ from . import utils
 
 def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, writer, label_names):
     model.train()
-    metric_logger = utils.MetricLogger(delimiter="  ")
+    metric_logger = utils.MetricLogger(delimiter="  ", device=device)
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)
 
@@ -84,7 +84,7 @@ def evaluate(model, data_loader, epoch, writer, draw_threshold, label_names, num
     torch.set_num_threads(1)
     cpu_device = torch.device("cpu")
     model.eval()
-    metric_logger = utils.MetricLogger(delimiter="  ")
+    metric_logger = utils.MetricLogger(delimiter="  ", device=device)
     header = 'Test:'
 
     coco = get_coco_api_from_dataset(data_loader.dataset)
