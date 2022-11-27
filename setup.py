@@ -10,7 +10,7 @@ setup(
     description='Python package that holds model to detect lion parts',
     install_requires=requirements,
     version='0.2dev',
-    packages=find_packages(exclude=['datasets', 'notebooks', 'pictures']),
+    packages=find_packages(),
     author='LINC',
     author_email=' tech@linclion.org'
 )
