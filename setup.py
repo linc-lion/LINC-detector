@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-requirements_file = open('requirements.txt')
+requirements_file = open('requirements_predict.txt')
 requirements = requirements_file.read().strip().split('\n')
 
 print(f'Setup requirements: {requirements}')
