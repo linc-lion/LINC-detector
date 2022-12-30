@@ -9,3 +9,5 @@ datasets
 winners/
 .idea
 .DS_Store
+dist
+*.egg-info
