@@ -7,15 +7,15 @@ import sys
 
 import torch
 import torch.utils.data
-from models import detection
+from linc.detector.models import detection
 from torch.utils.tensorboard import SummaryWriter
 
-from coco_utils import get_coco  # get_coco_kp
+from linc.detector.helper.coco_utils import get_coco  # get_coco_kp
 
-from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
-from engine import train_one_epoch, evaluate
+from linc.detector.helper.group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
+from linc.detector.helper.engine import train_one_epoch, evaluate
 
-import utils
+from linc.detector.helper import utils
 
 
 def main(args):

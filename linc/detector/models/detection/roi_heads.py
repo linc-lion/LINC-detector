@@ -1,7 +1,6 @@
 import torch
 
 import torch.nn.functional as F
-from torch import nn
 
 from torchvision.ops import boxes as box_ops
 from torchvision.ops import misc as misc_nn_ops

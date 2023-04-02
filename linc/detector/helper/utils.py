@@ -147,9 +147,10 @@ def reduce_dict(input_dict, average=True):
 
 
 class MetricLogger(object):
-    def __init__(self, delimiter="\t"):
+    def __init__(self, delimiter="\t", device=torch.device("cuda")):
         self.meters = defaultdict(SmoothedValue)
         self.delimiter = delimiter
+        self.device = device
 
     def update(self, **kwargs):
         for k, v in kwargs.items():
@@ -207,11 +208,13 @@ class MetricLogger(object):
             if i % print_freq == 0 or i == len(iterable) - 1:
                 eta_seconds = iter_time.global_avg * (len(iterable) - i)
                 eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
+                memory = torch.cuda.max_memory_allocated() if self.device.type == 'cuda' else 0.0
                 print(log_msg.format(
                     i, len(iterable), eta=eta_string,
                     meters=str(self),
                     time=str(iter_time), data=str(data_time),
-                    memory=torch.cuda.max_memory_allocated() / MB))
+                    memory=memory / MB
+                ))
             i += 1
             end = time.time()
         total_time = time.time() - start_time
