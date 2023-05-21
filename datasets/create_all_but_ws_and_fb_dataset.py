@@ -47,5 +47,5 @@ def ignore_picture_if(objects):
 
 
 dataset_creator = LINCDatasetConverter(category_grouping_dict, ignore_picture_fn=ignore_picture_if)
-dataset_creator.parse_arguments(input_path='Verified_Annotation/LionGuardians/095_Marti', output_path='coco_all_but_ws_and_fb', trim_to='0')
+dataset_creator.parse_arguments(input_path='../images/Annotated/Verified_Annotation', output_path='../coco_all_but_ws_and_fb', trim_to='0')
 dataset_creator.create_coco_dataset()
