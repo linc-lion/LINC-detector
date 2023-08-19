@@ -228,7 +228,6 @@ def collate_fn(batch):
 
 
 def warmup_lr_scheduler(optimizer, warmup_iters, warmup_factor):
-
     def f(x):
         if x >= warmup_iters:
             return 1
@@ -343,3 +342,17 @@ def draw_boxes(image, boxes, labels, label_names, scores=None, vert_size=None, l
         if image_id is not None:
             draw.text((int(image.shape[2] / 2), image.shape[1] - 15), f"Image_id: {image_id}", fill='white')
     return convert_to_torch(pil_image)
+
+
+def fetch_boxes_coordinates(image, boxes, labels, label_names, vert_size=None):
+    image = image.cpu()
+    if vert_size:
+        scale_factor = 1 / (image.shape[1] / vert_size)
+        boxes = boxes * scale_factor
+
+    text_labels = label_names[labels - 1] if len(labels) > 1 else [label_names[labels - 1]]
+    boxes_coordinates = {}
+    for i, (box, label) in enumerate(zip(boxes, text_labels)):
+        boxes_coordinates[str(label)] = box.tolist()
+
+    return boxes_coordinates
