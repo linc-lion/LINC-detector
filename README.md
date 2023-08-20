@@ -45,3 +45,17 @@ The code used in creating the dataset that was used for training the body parts 
 
 ### Notebooks
 There are several jupyter notebooks in the `notebooks/` directory which are useful for data exploration, and model evaluation results exploration. There is also a demo notebook for running an inference step chaining both models.
+
+### Pypi
+Linc-detector code that contains useful util are bundled as pypi package for client usage.
+* Update version `setup.py`.
+* Publish code to testpypi as test:
+  ```commandline
+  > python setup.py bdist_wheel
+  > twine upload -r testpypi dist/*
+  ```
+* Publish code to pypi:
+  ```commandline
+  > python setup.py bdist_wheel
+  > twine upload dist/*
+  ```
